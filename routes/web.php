@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Middleware\ApplySettings;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -16,9 +18,12 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
     Route::get('/profile/photo', [ProfileController::class, 'photo'])->name('profile.photo');
+
+    Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
+    Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
 });
 
-// The container health check. No session or cookies: it must answer before the first migration.
+// The container health check. No session, cookies or settings: it must answer before the first migration.
 Route::get('/up', HealthController::class)
     ->name('health')
     ->withoutMiddleware([
@@ -27,6 +32,7 @@ Route::get('/up', HealthController::class)
         StartSession::class,
         ShareErrorsFromSession::class,
         PreventRequestForgery::class,
+        ApplySettings::class,
     ]);
 
 require __DIR__.'/auth.php';

@@ -75,3 +75,8 @@ html:not([data-bs-theme="dark"]) .theme-icon-dark {
     cursor: default;
     pointer-events: none;
 }
+
+// Alpine: an element with x-cloak stays hidden until Alpine has started.
+[x-cloak] {
+    display: none !important;
+}

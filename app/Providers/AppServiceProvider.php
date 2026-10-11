@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\Settings;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -11,7 +12,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Scoped: one per request, so the stored settings are read once a request and never go stale under Octane.
+        $this->app->scoped(Settings::class);
     }
 
     /**

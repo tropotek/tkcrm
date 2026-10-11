@@ -91,6 +91,9 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - `laravel/breeze` is a dev dependency used only as a source of stubs to copy from `vendor/laravel/breeze/stubs/default`. Never run `breeze:install`: it would replace the layout and the Vite setup with Tailwind.
 - Dates are stored in UTC and shown in the reader's timezone. In a view use `<x-date :value="…" />` (it takes a `format`); elsewhere use `App\Support\LocalTime::of($date)`. Never format a stored date directly.
 - A user's photo is on the private `local` disk under `photos/` and is sent by `ProfileController::photo` to that user only. Use `$user->photoUrl()` for its address.
+- Settings the owner can change are read with `App\Facades\Settings::get('key')`. Every key, its default, type and validation rules are in `App\Support\Settings::definitions()`; a new setting is added there and to `settings/edit.blade.php`. An unknown key throws. The table is read once per request.
+- A rate (GST, the tax estimate) is an integer in basis points: 1000 is 10%. `Settings::percentage()` and `setPercentage()` convert for a form. Never hold a rate as a float.
+- The site name comes from the `site_name` setting, copied into `config('app.name')` for each web request by `ApplySettings`. Code outside a web request (a queued job, a command) reads `Settings::get('site_name')`.
 - There are no roles or permissions. Every login sees and does everything, so no screen checks an ability for who the user is.
 - Until the app is live, a schema change edits the table's own migration rather than adding a second one; rebuild with `composer fresh`.
 - Run Pint before committing.
