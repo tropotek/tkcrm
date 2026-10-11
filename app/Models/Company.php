@@ -81,6 +81,23 @@ class Company extends Model
         return $this->hasMany(Task::class);
     }
 
+    /**
+     * @return HasMany<Invoice, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * The invoice that what the company is billed next goes onto: its open invoice, made now if
+     * it has none. With more than one open, it is the oldest.
+     */
+    public function openInvoice(): Invoice
+    {
+        return $this->invoices()->open()->oldest('id')->first() ?? $this->invoices()->create();
+    }
+
     public function isClient(): bool
     {
         return $this->type === CompanyType::Client;

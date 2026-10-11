@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Models\Company;
+use App\Models\InvoiceLine;
 use App\Models\Project;
 use App\Models\Task;
 use App\Models\TaskCategory;
@@ -304,7 +305,7 @@ class TaskEditTest extends TestCase
     public function test_a_billed_task_cannot_be_reopened(): void
     {
         $task = $this->task('closed');
-        $task->forceFill(['invoiced_at' => now(), 'invoice_line_id' => 12])->save();
+        $task->forceFill(['invoiced_at' => now(), 'invoice_line_id' => InvoiceLine::factory()->create()->id])->save();
 
         $this->assertTrue($task->isLockedByInvoice());
         $this->assertFalse($task->canReopen());

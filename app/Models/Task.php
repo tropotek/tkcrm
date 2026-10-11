@@ -82,6 +82,16 @@ class Task extends Model
     }
 
     /**
+     * The invoice line its billable time became, once it is billed.
+     *
+     * @return BelongsTo<InvoiceLine, $this>
+     */
+    public function invoiceLine(): BelongsTo
+    {
+        return $this->belongsTo(InvoiceLine::class);
+    }
+
+    /**
      * Its time logs, the earliest work first.
      *
      * @return HasMany<TaskLog, $this>

@@ -34,10 +34,10 @@ return new class extends Migration
             $table->unsignedInteger('estimated_minutes')->default(0);
             $table->timestamp('closed_at')->nullable();
             $table->timestamp('cancelled_at')->nullable();
-            // When its billable time went onto an invoice, and the line it became. The invoice_lines
-            // table comes with the invoices: the constraint is added there.
+            // When its billable time went onto an invoice, and the line it became. A line taken off
+            // an open invoice leaves the task without one.
             $table->timestamp('invoiced_at')->nullable();
-            $table->unsignedBigInteger('invoice_line_id')->nullable()->index();
+            $table->foreignId('invoice_line_id')->nullable()->constrained()->nullOnDelete();
             $table->timestamps();
         });
 
