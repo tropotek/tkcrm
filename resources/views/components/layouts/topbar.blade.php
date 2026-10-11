@@ -17,7 +17,11 @@
             @auth
                 <li class="dropdown notification-list topbar-dropdown">
                     <a class="nav-link dropdown-toggle nav-user me-0" data-bs-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
-                        <i class="ri-account-circle-line noti-icon"></i>
+                        @if ($photo = auth()->user()->photoUrl())
+                            <img src="{{ $photo }}" alt="" class="rounded-circle" width="32" height="32" style="object-fit: cover">
+                        @else
+                            <i class="ri-account-circle-line noti-icon"></i>
+                        @endif
                         <span class="pro-user-name ms-1">
                             {{ auth()->user()->name }} <i class="mdi mdi-chevron-down"></i>
                         </span>

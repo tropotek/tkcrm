@@ -89,6 +89,8 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - Login and password recovery are throttled per email and IP address together, with the limits in `config/tkcrm.php`. Recovery and reset answer the same whether or not the email has an account; keep it that way when changing them.
 - Emails are stored in lower case and SQLite compares them exactly, so lower-case an email before looking a user up by it.
 - `laravel/breeze` is a dev dependency used only as a source of stubs to copy from `vendor/laravel/breeze/stubs/default`. Never run `breeze:install`: it would replace the layout and the Vite setup with Tailwind.
+- Dates are stored in UTC and shown in the reader's timezone. In a view use `<x-date :value="…" />` (it takes a `format`); elsewhere use `App\Support\LocalTime::of($date)`. Never format a stored date directly.
+- A user's photo is on the private `local` disk under `photos/` and is sent by `ProfileController::photo` to that user only. Use `$user->photoUrl()` for its address.
 - There are no roles or permissions. Every login sees and does everything, so no screen checks an ability for who the user is.
 - Until the app is live, a schema change edits the table's own migration rather than adding a second one; rebuild with `composer fresh`.
 - Run Pint before committing.

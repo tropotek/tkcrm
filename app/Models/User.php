@@ -22,6 +22,9 @@ class User extends Authenticatable
     /** The timezone a new user's dates are shown in. Also the column default in the users migration. */
     public const DEFAULT_TIMEZONE = 'Australia/Melbourne';
 
+    /** Where profile photos are kept on the private (local) disk. */
+    public const PHOTO_DIRECTORY = 'photos';
+
     /** @var array<string, mixed> */
     protected $attributes = [
         'timezone' => self::DEFAULT_TIMEZONE,
@@ -37,5 +40,14 @@ class User extends Authenticatable
         return [
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * The address of this user's photo, or null without one. Only the user themself can load it.
+     * The query string changes with the file, so a new photo is not hidden by the browser's cache.
+     */
+    public function photoUrl(): ?string
+    {
+        return $this->photo === null ? null : route('profile.photo', ['v' => substr(md5($this->photo), 0, 8)]);
     }
 }
