@@ -32,7 +32,8 @@ return [
 
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
+            // Under data/, the one directory that is a mounted volume in production: attachments and profile photos.
+            'root' => base_path('data/private'),
             // Private files are sent by a controller behind the login, never by a signed URL.
             'serve' => false,
             'throw' => false,

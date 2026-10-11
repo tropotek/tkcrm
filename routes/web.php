@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\ProductCategoryController;
@@ -32,6 +33,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/products/{product}/lookup', [ProductController::class, 'lookup'])->name('products.lookup');
     Route::resource('products', ProductController::class)->except('show');
     Route::resource('product-categories', ProductCategoryController::class)->except('show');
+
+    Route::post('/attachments', [AttachmentController::class, 'store'])->name('attachments.store');
+    Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
+    Route::get('/attachments/{attachment}/thumbnail', [AttachmentController::class, 'thumbnail'])->name('attachments.thumbnail');
+    Route::delete('/attachments/{attachment}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
 
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');

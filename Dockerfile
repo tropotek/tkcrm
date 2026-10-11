@@ -13,6 +13,8 @@ FROM dunglas/frankenphp:${FRANKENPHP}-bookworm AS dev
 # bcmath: all money maths. pdo_mysql: the tktask importer reads a MariaDB database.
 RUN install-php-extensions pdo_sqlite pdo_mysql intl zip pcntl gd bcmath
 
+COPY docker/php.ini "$PHP_INI_DIR/conf.d/zz-tkcrm.ini"
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 RUN apt-get update \

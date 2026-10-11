@@ -58,7 +58,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - `app/`: application code, `App\` namespace.
 - `data/`: runtime data, gitignored. The SQLite database is `data/tkcrm.sqlite` (WAL mode). In production this directory is the mounted volume.
 - `database/migrations/`: schema.
-- `Dockerfile`, `docker-compose.yml`, `docker/`: the dev image and containers. `docker/Caddyfile` is Octane's FrankenPHP site config.
+- `Dockerfile`, `docker-compose.yml`, `docker/`: the dev image and containers. `docker/Caddyfile` is Octane's FrankenPHP site config. `docker/php.ini` holds the upload limits and is copied into the image, so changing it needs `docker compose build app`.
 - `resources/scss/`: `app.scss` and `icons.scss` are the entries. `config/default` and `custom/` are lifted from Minton (`~/Projects/Dev/Minton/Minton/resources/scss`).
 - `resources/js/`: `app.js` is the entry. `minton/` holds the template's own scripts. `modal.js` drives the shared dialog.
 - `resources/views/components/layouts/`: the page layouts. `<x-layouts.app title="…">` is the signed-in shell (top bar, sidebar, page title, flash messages, footer, shared dialog); `<x-layouts.guest>` is the card for the login pages.
@@ -93,7 +93,9 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - Emails are stored in lower case and SQLite compares them exactly, so lower-case an email before looking a user up by it.
 - `laravel/breeze` is a dev dependency used only as a source of stubs to copy from `vendor/laravel/breeze/stubs/default`. Never run `breeze:install`: it would replace the layout and the Vite setup with Tailwind.
 - Dates are stored in UTC and shown in the reader's timezone. In a view use `<x-date :value="…" />` (it takes a `format`); elsewhere use `App\Support\LocalTime::of($date)`. Never format a stored date directly.
-- A user's photo is on the private `local` disk under `photos/` and is sent by `ProfileController::photo` to that user only. Use `$user->photoUrl()` for its address.
+- The private `local` disk is `data/private`, outside the web root and inside the one directory that is a volume in production. Nothing on it has a URL of its own: a controller behind the login sends each file.
+- A user's photo is under `photos/` there and is sent by `ProfileController::photo` to that user only. Use `$user->photoUrl()` for its address.
+- Files are attached to a record with `<x-attachments :for="$record" />`. The record's model uses `App\Attachments\HasAttachments` and is listed in the morph map in `AppServiceProvider` under the name it is stored by. The size limit and the kinds of file accepted are in `config/tkcrm.php`; a file's kind is read from its contents.
 - Settings the owner can change are read with `App\Facades\Settings::get('key')`. Every key, its default, type and validation rules are in `App\Support\Settings::definitions()`; a new setting is added there and to `settings/edit.blade.php`. An unknown key throws. The table is read once per request.
 - A rate setting (GST, the tax estimate) is read in basis points; `Settings::percentage()` and `setPercentage()` convert for the settings form.
 - The site name comes from the `site_name` setting, copied into `config('app.name')` for each web request by `ApplySettings`. Code outside a web request (a queued job, a command) reads `Settings::get('site_name')`.
