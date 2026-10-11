@@ -55,6 +55,7 @@ The containers load `.env` as real environment variables, so a change to `.env` 
 - `resources/scss/`: `app.scss` and `icons.scss` are the entries. `config/default` and `custom/` are lifted from Minton (`~/Projects/Dev/Minton/Minton/resources/scss`).
 - `resources/js/`: `app.js` is the entry. `minton/` holds the template's own scripts. `modal.js` drives the shared dialog.
 - `resources/views/components/layouts/`: the page layouts. `<x-layouts.app title="…">` is the signed-in shell (top bar, sidebar, page title, flash messages, footer, shared dialog); `<x-layouts.guest>` is the card for the login pages.
+- `/up` (`HealthController`, `App\Support\HealthStatus`): the health check the containers poll, and the reply tkcrm's own site monitor reads from a Laravel site. 200 with `version` and `db: ok` when the database accepts a write, 503 with `db: error` otherwise.
 - `config/navigation.php`: the sidebar menu, read by `App\Support\Navigation`.
 - `resources/fonts/`, `resources/images/`: icon fonts and images the SCSS refers to.
 - `tests/Feature`, `tests/Unit`: PHPUnit tests.
