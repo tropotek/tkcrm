@@ -35,6 +35,22 @@ enum Cycle: string
     }
 
     /**
+     * How many times a year it comes round, as a quantity to multiply a price by. A year is 52 weeks.
+     */
+    public function timesPerYear(): string
+    {
+        return match ($this) {
+            self::Each => '0',
+            self::Week => '52',
+            self::Fortnight => '26',
+            self::Month => '12',
+            self::Quarter => '4',
+            self::Year => '1',
+            self::Biannual => '0.5',
+        };
+    }
+
+    /**
      * The cycles a recurring item can have: all but each.
      *
      * @return list<self>

@@ -1,5 +1,5 @@
 {{--
-    A company's own page: its details, then its projects and open tasks. Its invoices, recurring items and
+    A company's own page: its details, then its projects, recurring items and open tasks. Its invoices and
     domains are added below by the tasks that build those modules.
 --}}
 <x-layouts.app :title="$company->name">
@@ -125,6 +125,45 @@
                                         <td><span class="badge bg-{{ $status->colour() }}">{{ $status->label() }}</span></td>
                                         <td class="text-nowrap text-muted">{{ $project->start_on?->format('j M Y') }}{{ $project->end_on ? ' to '.$project->end_on->format('j M Y') : '' }}</td>
                                         <td class="text-end text-nowrap">{{ $project->quote->isZero() ? '' : $project->quote->format() }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    @php($recurrings = $company->recurrings()->with('product')->orderByDesc('active')->orderBy('next_on')->orderBy('id')->get())
+
+    @if ($recurrings->isNotEmpty() || $company->isClient())
+        <div class="card">
+            <div class="card-body">
+                <div class="float-end">
+                    @if ($recurrings->isNotEmpty())
+                        <a href="{{ route('recurrings.index', ['client' => $company->id, 'show' => 'all']) }}" class="btn btn-sm btn-link">In the list</a>
+                    @endif
+                    <a href="{{ route('recurrings.create', ['client' => $company->id]) }}" class="btn btn-sm btn-light">Add recurring item</a>
+                </div>
+                <h4 class="header-title mb-3">Recurring items</h4>
+
+                @if ($recurrings->isEmpty())
+                    <p class="text-muted mb-0">No recurring items.</p>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-sm table-centered mb-0">
+                            <tbody>
+                                @foreach ($recurrings as $recurring)
+                                    <tr @class(['text-muted' => ! $recurring->active])>
+                                        <td>
+                                            <a href="{{ route('recurrings.edit', $recurring) }}" class="fw-medium">{{ $recurring->label() }}</a>
+                                            @unless ($recurring->active)
+                                                <span class="badge bg-secondary ms-1">Inactive</span>
+                                            @endunless
+                                        </td>
+                                        <td class="text-nowrap text-muted">{{ $recurring->cycle->label() }}, next {{ $recurring->next_on->format('j M Y') }}</td>
+                                        <td class="text-end text-nowrap">{{ $recurring->billedPrice()->format() }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

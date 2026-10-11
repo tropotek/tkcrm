@@ -84,7 +84,8 @@ class ProductPriceController extends Controller
     }
 
     /**
-     * The products named by `ids[]`, by name. Ids that are not products are passed over.
+     * The products named by `ids[]`, by name, each with how many active recurring items follow its
+     * price and how many have their own. Ids that are not products are passed over.
      *
      * @return Collection<int, Product>
      */
@@ -92,6 +93,14 @@ class ProductPriceController extends Controller
     {
         $ids = array_filter((array) $request->input('ids', []), fn (mixed $id) => is_scalar($id) && ctype_digit((string) $id));
 
-        return Product::with('category')->whereKey($ids)->orderByRaw('name COLLATE NOCASE')->get();
+        return Product::with('category')
+            ->withCount([
+                // Active items only: an inactive one bills nothing at any price.
+                'recurrings as recurrings_following' => fn ($query) => $query->active()->whereNull('price'),
+                'recurrings as recurrings_own_price' => fn ($query) => $query->active()->whereNotNull('price'),
+            ])
+            ->whereKey($ids)
+            ->orderByRaw('name COLLATE NOCASE')
+            ->get();
     }
 }

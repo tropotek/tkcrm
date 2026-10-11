@@ -15,6 +15,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductPriceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\RecurringController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TaskCategoryController;
 use App\Http\Controllers\TaskController;
@@ -56,6 +57,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/invoices/{invoice}/email', [InvoiceEmailController::class, 'store'])->name('invoices.email.store');
     Route::resource('invoices.payments', PaymentController::class)->shallow()->only('create', 'store', 'destroy');
     Route::resource('invoices.lines', InvoiceLineController::class)->shallow()->except('index', 'show');
+
+    Route::resource('recurrings', RecurringController::class)->except('show');
 
     // A task is never deleted: it is cancelled.
     Route::resource('tasks', TaskController::class)->except('destroy');

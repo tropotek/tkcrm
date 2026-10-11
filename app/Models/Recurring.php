@@ -72,8 +72,10 @@ class Recurring extends Model
                 throw new InvalidArgumentException('A recurring item needs a product or a price of its own.');
             }
 
-            // A new item first bills on the day it starts.
-            $recurring->next_on ??= $recurring->start_on;
+            // It first bills on the day it starts, and until the run has moved it on that day can still change.
+            if ($recurring->next_on === null || (! $recurring->hasRun() && $recurring->isDirty('start_on') && ! $recurring->isDirty('next_on'))) {
+                $recurring->next_on = $recurring->start_on;
+            }
         });
     }
 
@@ -99,6 +101,31 @@ class Recurring extends Model
     public function scopeActive(Builder $query): void
     {
         $query->where('active', true);
+    }
+
+    /**
+     * Whether the run has moved it on from its first day. From then its start and cycle are what
+     * its dates were worked out from, so they stay, and it is made inactive instead of deleted.
+     */
+    public function hasRun(): bool
+    {
+        return $this->count > 0 || $this->previous_on !== null;
+    }
+
+    /**
+     * What it is called in a list: its description, or else its product's name.
+     */
+    public function label(): string
+    {
+        return $this->description ?: (string) $this->product?->name;
+    }
+
+    /**
+     * What it bills over a year at today's price.
+     */
+    public function yearlyValue(): Money
+    {
+        return $this->billedPrice()->multiply($this->cycle->timesPerYear());
     }
 
     /**
