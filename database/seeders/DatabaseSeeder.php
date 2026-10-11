@@ -8,6 +8,7 @@ use App\Models\Company;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\User;
+use App\Notifications\Notice;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -25,7 +26,10 @@ class DatabaseSeeder extends Seeder
         }
 
         if (! User::where('email', 'owner@example.com')->exists()) {
-            User::factory()->create(['name' => 'Owner', 'email' => 'owner@example.com']);
+            $owner = User::factory()->create(['name' => 'Owner', 'email' => 'owner@example.com']);
+
+            // Something for the bell to show.
+            $owner->notify(new Notice('Development data is ready', 'Made-up companies and products were added.', route('companies.index'), 'ri-database-2-line'));
         }
 
         $this->companies();

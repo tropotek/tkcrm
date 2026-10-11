@@ -9,6 +9,7 @@ import htmx from 'htmx.org';
 import Alpine from 'alpinejs';
 
 import './modal';
+import './notifications';
 
 window.htmx = htmx;
 window.Alpine = Alpine;

@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// The schedule runs only in the worker container (docker compose --profile worker), never in the app.
+// Times are UTC.
+
+Schedule::command('tkcrm:prune-notifications')->dailyAt('03:25')->withoutOverlapping(10);

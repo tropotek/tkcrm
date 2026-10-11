@@ -92,6 +92,14 @@ class DatabaseSeederTest extends TestCase
         $this->assertSame(9900, Product::where('code', 'LAB')->sole()->price->inCents());
     }
 
+    public function test_the_dev_owner_gets_one_notice_however_often_it_is_seeded(): void
+    {
+        $this->runSeeder();
+        $this->runSeeder();
+
+        $this->assertSame('Development data is ready', User::sole()->notifications()->sole()->data['title']);
+    }
+
     public function test_it_seeds_nothing_in_production(): void
     {
         $this->app['env'] = 'production';

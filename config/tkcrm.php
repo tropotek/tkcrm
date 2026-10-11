@@ -40,4 +40,18 @@ return [
         'thumbnail_px' => 240,
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    |
+    | A notification that has been read is deleted this many days after it
+    | last changed. An unread one is kept.
+    |
+    */
+
+    'notifications' => [
+        'keep_read_days' => (int) env('TKCRM_NOTIFICATIONS_KEEP_READ_DAYS', 30),
+    ],
+
 ];

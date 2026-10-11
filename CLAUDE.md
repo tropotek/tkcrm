@@ -29,6 +29,7 @@ docker compose exec app php artisan migrate                # apply new migration
 docker compose exec app php artisan db:seed                # add any missing development data (local only)
 docker compose exec app composer fresh                     # roll every migration back, migrate and seed
 docker compose exec app php artisan tkcrm:create-user you@example.com   # create a login (--name, --password, --timezone)
+docker compose exec app php artisan tkcrm:prune-notifications  # delete read notifications older than 30 days (nightly in the worker)
 docker compose exec app composer test
 docker compose exec app vendor/bin/pint
 docker compose build app                          # after changing the Dockerfile
@@ -113,6 +114,8 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - In a dialog, mark the first field `autofocus`; `modal.js` focuses it once the dialog is open. A dialog always swaps its contents, whatever swap its trigger inherits.
 - `GET /products/{id}/lookup` gives a product's code, name, description, price (a decimal string), GST-free flag and cycle as JSON, for a form that fills a line from a product.
 - Do not give an element the id `status` or `preloader`: the Minton skin styles both and hides `#status`.
+- To tell the owner something, send a database notification to every login with `App\Support\NotificationFeed::tellEveryone(...)`. A plain one is `new App\Notifications\Notice($title, $text, $url, $icon)`; one with data of its own gets a class that implements `App\Notifications\Contracts\Presentable`, whose static `present(array $data)` says how it is shown from the stored data alone. The top bar's bell, the notifications page and the browser notification all read that.
+- Scheduled commands are listed in `routes/console.php`, in UTC, and run only in the worker container.
 - There are no roles or permissions. Every login sees and does everything, so no screen checks an ability for who the user is.
 - Until the app is live, a schema change edits the table's own migration rather than adding a second one; rebuild with `composer fresh`.
 - Run Pint before committing.
