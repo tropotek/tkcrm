@@ -225,7 +225,7 @@ class InvoiceEmailTest extends TestCase
     {
         $this->get(route('invoices.email.create', ['invoice' => $this->issued(), 'note' => 'Thanks for <lunch>.']))
             ->assertOk()
-            ->assertSee('id="invoice-email-preview"', false)
+            ->assertSee('id="mail-preview"', false)
             ->assertSee(e(e('Thanks for <lunch>.')), false)
             ->assertSee('Thanks for &lt;lunch&gt;.</textarea>', false);
     }
@@ -298,7 +298,7 @@ class InvoiceEmailTest extends TestCase
         $this->assertSame('Thanks for lunch.', unserialize($log->message)->note);
 
         // The dialog then says it has been sent before.
-        $this->get(route('invoices.email.create', $invoice))->assertSee('This invoice was last emailed');
+        $this->get(route('invoices.email.create', $invoice))->assertSee('This was last emailed');
     }
 
     public function test_a_note_that_is_too_long_comes_back_in_the_dialog(): void

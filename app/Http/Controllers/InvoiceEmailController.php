@@ -62,7 +62,6 @@ class InvoiceEmailController extends Controller
             'html' => $mail?->filled()->html(),
             // The last time it was emailed, if it has been.
             'last' => $invoice->mail()->where('kind', MailKind::Invoice)->first(),
-            'redirectTo' => config('tkcrm.mail.redirect_to'),
         ]);
     }
 }

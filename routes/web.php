@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\CompanyController;
+use App\Http\Controllers\CompanyStatementController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceEmailController;
@@ -36,6 +37,9 @@ Route::middleware('auth')->group(function () {
 
     // Companies are never deleted here: a client or supplier that is done with is made inactive.
     Route::resource('companies', CompanyController::class)->except('destroy');
+    Route::get('/companies/{company}/statement', [CompanyStatementController::class, 'create'])->name('companies.statement.create');
+    Route::post('/companies/{company}/statement', [CompanyStatementController::class, 'store'])->name('companies.statement.store');
+    Route::get('/companies/{company}/statement/pdf', [CompanyStatementController::class, 'pdf'])->name('companies.statement.pdf');
 
     Route::resource('projects', ProjectController::class);
 

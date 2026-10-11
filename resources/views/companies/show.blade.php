@@ -11,6 +11,7 @@
                 <button type="submit" class="btn btn-light" title="Its open invoice, started now if it has none"><i class="ri-bill-line me-1"></i>Open invoice</button>
             </form>
             <a href="{{ route('invoices.index', ['client' => $company->id, 'show' => 'all']) }}" class="btn btn-light">Invoices</a>
+            <button type="button" class="btn btn-light" hx-get="{{ route('companies.statement.create', $company) }}" hx-target="#app-modal-content" title="Its account for a range of days, to open as a PDF or email"><i class="ri-file-list-3-line me-1"></i>Statement</button>
         @endif
         <a href="{{ route('companies.edit', $company) }}" class="btn btn-primary"><i class="ri-pencil-line me-1"></i>Edit</a>
     </x-slot:actions>

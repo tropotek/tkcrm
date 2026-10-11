@@ -88,9 +88,9 @@ class InvoiceMail extends Mailable
 
     /**
      * What is attached, in order: each with its file name, what it is, where the owner can open
-     * it (null where it has no page of its own) and the PDF itself, made only when asked for.
+     * it and the PDF itself, made only when asked for.
      *
-     * @return list<array{filename: string, label: string, url: ?string, pdf: \Closure(): string}>
+     * @return list<array{filename: string, label: string, url: string, pdf: \Closure(): string}>
      */
     public function documents(): array
     {
@@ -120,7 +120,7 @@ class InvoiceMail extends Mailable
             $documents[] = [
                 'filename' => $statementPdf->filename($statement),
                 'label' => "A statement, as the client has other unpaid invoices: {$statement->closing->format()} owing in all",
-                'url' => null,
+                'url' => route('companies.statement.pdf', ['company' => $invoice->company_id, 'from' => $statement->from->toDateString(), 'to' => $statement->to->toDateString()]),
                 'pdf' => fn () => $statementPdf->pdf($statement),
             ];
         }
