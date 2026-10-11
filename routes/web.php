@@ -5,6 +5,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceLineController;
+use App\Http\Controllers\MailLogController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductCategoryController;
@@ -75,6 +76,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/notifications/menu', [NotificationController::class, 'menu'])->name('notifications.menu');
     Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
     Route::get('/notifications/{notification}', [NotificationController::class, 'show'])->name('notifications.show');
+
+    Route::get('/mail-log', [MailLogController::class, 'index'])->name('mail-log.index');
+    Route::post('/mail-log/{mailLog}/resend', [MailLogController::class, 'resend'])->name('mail-log.resend');
 
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');

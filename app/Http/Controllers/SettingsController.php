@@ -2,9 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\MailKind;
 use App\Facades\Settings;
-use App\Jobs\SendMail;
 use App\Mail\TestMessage;
+use App\Models\MailLog;
 use App\Models\Product;
 use App\Support\Owner;
 use Illuminate\Http\RedirectResponse;
@@ -73,7 +74,7 @@ class SettingsController extends Controller
     {
         $email = $request->user()->email;
 
-        SendMail::dispatch(new TestMessage($email));
+        MailLog::send(new TestMessage($email), MailKind::Test);
 
         return redirect()->route('settings.edit')->with('success', "A test email to {$email} is queued. It is sent when the worker next runs.");
     }

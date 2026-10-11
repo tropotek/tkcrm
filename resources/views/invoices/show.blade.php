@@ -278,6 +278,23 @@
                     </div>
                 </div>
             @endif
+
+            @if ($invoice->mail->isNotEmpty())
+                <div class="card">
+                    <div class="card-body">
+                        <a href="{{ route('mail-log.index') }}" class="btn btn-sm btn-link float-end">Mail log</a>
+                        <h4 class="header-title mb-3">Emails</h4>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm table-centered mb-0">
+                                <tbody>
+                                    @include('mail-log._rows', ['messages' => $invoice->mail, 'showRelated' => false])
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            @endif
         </div>
     </div>
 </x-layouts.app>

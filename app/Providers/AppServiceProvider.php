@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use App\Mail\RedirectAllMail;
+use App\Models\Company;
+use App\Models\Invoice;
 use App\Models\Task;
 use App\Models\TaskLog;
 use App\Support\Owner;
@@ -35,11 +37,13 @@ class AppServiceProvider extends ServiceProvider
         // MAIL_REDIRECT_TO: every message the app sends, whatever sends it.
         Event::listen(MessageSending::class, RedirectAllMail::class);
 
-        // The names records are stored under in polymorphic columns (attachments, and later invoice line
-        // sources and the mail log). A model that takes attachments must be listed here.
+        // The names records are stored under in polymorphic columns (attachments, invoice line sources
+        // and the mail log). A model that takes attachments, or that mail is logged against, must be listed here.
         Relation::morphMap([
             'task' => Task::class,
             'task_log' => TaskLog::class,
+            'invoice' => Invoice::class,
+            'company' => Company::class,
         ]);
     }
 }

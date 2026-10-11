@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
@@ -111,6 +112,16 @@ class Invoice extends Model
             $this->issued_on !== null => InvoiceStatus::Unpaid,
             default => InvoiceStatus::Open,
         };
+    }
+
+    /**
+     * The emails sent about it, newest first.
+     *
+     * @return MorphMany<MailLog, $this>
+     */
+    public function mail(): MorphMany
+    {
+        return $this->morphMany(MailLog::class, 'related')->latest('id');
     }
 
     /**
