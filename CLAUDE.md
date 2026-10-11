@@ -96,6 +96,8 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - Settings the owner can change are read with `App\Facades\Settings::get('key')`. Every key, its default, type and validation rules are in `App\Support\Settings::definitions()`; a new setting is added there and to `settings/edit.blade.php`. An unknown key throws. The table is read once per request.
 - A rate setting (GST, the tax estimate) is read in basis points; `Settings::percentage()` and `setPercentage()` convert for the settings form.
 - The site name comes from the `site_name` setting, copied into `config('app.name')` for each web request by `ApplySettings`. Code outside a web request (a queued job, a command) reads `Settings::get('site_name')`.
+- A company (`App\Models\Company`) is a client or a supplier (`App\Enums\CompanyType`). `$company->account_number` is `CO-` and the id padded to ten digits, so an imported company must keep its tktask id. There is no client credit.
+- The seeder's companies, and every factory, use made-up names and `example.com` addresses. Keep it that way.
 - There are no roles or permissions. Every login sees and does everything, so no screen checks an ability for who the user is.
 - Until the app is live, a schema change edits the table's own migration rather than adding a second one; rebuild with `composer fresh`.
 - Run Pint before committing.
