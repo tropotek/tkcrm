@@ -18,6 +18,9 @@
                             @enderror
                         </div>
 
+                        <x-company-select name="owner_company_id" label="Owner company" :selected="$settings['owner_company_id']"
+                            help="Your own business. Its name, ABN, address, phone and email go on invoices, and its email sends them." />
+
                         <div class="form-check">
                             <input type="checkbox" id="bcc_owner" name="bcc_owner" value="1" class="form-check-input" @checked(old('bcc_owner', $settings['bcc_owner']))>
                             <label for="bcc_owner" class="form-check-label">Send the owner a blind copy of every email to a client</label>

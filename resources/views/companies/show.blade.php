@@ -16,6 +16,9 @@
                         @unless ($company->active)
                             <span class="badge bg-secondary ms-1">Inactive</span>
                         @endunless
+                        @if (app(App\Support\Owner::class)->is($company))
+                            <span class="badge bg-primary ms-1" title="Chosen as the owner company in the settings">Your business</span>
+                        @endif
                     </h4>
 
                     <dl class="row mb-0">

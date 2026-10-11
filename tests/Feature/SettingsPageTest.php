@@ -91,6 +91,7 @@ class SettingsPageTest extends TestCase
 
         $this->assertSame([
             'site_name' => 'Acme Books',
+            'owner_company_id' => null,
             'overdue_days' => 30,
             'default_labour_product_id' => null,
             'time_logs_billable' => false,

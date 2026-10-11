@@ -40,6 +40,12 @@ class Settings
                 'type' => 'string',
                 'rules' => ['required', 'string', 'max:100'],
             ],
+            // The company record that is the business itself. Read its details through App\Support\Owner.
+            'owner_company_id' => [
+                'default' => null,
+                'type' => 'id',
+                'rules' => ['nullable', 'integer', 'exists:companies,id'],
+            ],
             // Days from issuing an invoice until it is due.
             'overdue_days' => [
                 'default' => 14,

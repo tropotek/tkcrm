@@ -17,6 +17,7 @@ class SettingsTest extends TestCase
     {
         $this->assertSame([
             'site_name' => config('app.name'),
+            'owner_company_id' => null,
             'overdue_days' => 14,
             'default_labour_product_id' => null,
             'time_logs_billable' => true,
