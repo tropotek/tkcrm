@@ -28,7 +28,10 @@
                     <button type="submit" class="btn btn-primary"><i class="ri-send-plane-line me-1"></i>Issue</button>
                 </form>
             @endif
-        @elseif ($status === App\Enums\InvoiceStatus::Unpaid && $invoice->payments->isEmpty())
+        @elseif ($status === App\Enums\InvoiceStatus::Unpaid)
+            <button type="button" class="btn btn-primary" hx-get="{{ route('invoices.payments.create', $invoice) }}" hx-target="#app-modal-content"><i class="ri-money-dollar-circle-line me-1"></i>Record payment</button>
+        @endif
+        @if ($status === App\Enums\InvoiceStatus::Unpaid && $invoice->payments->isEmpty())
             <form method="POST" action="{{ route('invoices.reopen', $invoice) }}" class="d-inline"
                 onsubmit="return confirm('Re-open this invoice to change it? It keeps its number, and must be issued again.')">
                 @csrf
@@ -107,7 +110,7 @@
                                         <tr>
                                             <td><a href="{{ route('invoices.show', $other) }}" class="fw-medium">Invoice {{ $other->number }}</a></td>
                                             <td @class(['text-nowrap', 'text-danger' => $other->isOverdue()])>{{ $other->due_on ? 'Due '.$other->due_on->format('j M Y') : '' }}</td>
-                                            <td class="text-end text-nowrap">{{ $other->totals()->total->format() }}</td>
+                                            <td class="text-end text-nowrap">{{ $other->outstanding()->format() }}</td>
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -235,9 +238,33 @@
                                             <td>{{ $payment->method->label() }}</td>
                                             <td>{{ $payment->notes }}</td>
                                             <td class="text-end text-nowrap">{{ $payment->amount->format() }}</td>
+                                            <td class="text-end text-nowrap">
+                                                @unless ($status === App\Enums\InvoiceStatus::Cancelled)
+                                                    <form method="POST" action="{{ route('payments.destroy', $payment) }}" class="d-inline"
+                                                        onsubmit="return confirm('Delete this payment of {{ $payment->amount->format() }}?{{ $invoice->paid_on ? ' The invoice will be unpaid again.' : '' }}')">
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                                    </form>
+                                                @endunless
+                                            </td>
                                         </tr>
                                     @endforeach
                                 </tbody>
+                                <tfoot>
+                                    <tr class="fw-semibold">
+                                        <td colspan="3" class="text-end">Paid</td>
+                                        <td class="text-end text-nowrap">{{ $invoice->paidTotal()->format() }}</td>
+                                        <td></td>
+                                    </tr>
+                                    @unless ($invoice->outstanding()->isZero())
+                                        <tr class="fw-semibold">
+                                            <td colspan="3" class="text-end">Still owing</td>
+                                            <td class="text-end text-nowrap">{{ $invoice->outstanding()->format() }}</td>
+                                            <td></td>
+                                        </tr>
+                                    @endunless
+                                </tfoot>
                             </table>
                         </div>
                     </div>

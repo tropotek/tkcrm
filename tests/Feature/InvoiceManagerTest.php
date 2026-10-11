@@ -158,13 +158,13 @@ class InvoiceManagerTest extends TestCase
         $totals = fn (array $input) => array_map(fn ($value) => is_int($value) ? $value : $value->inCents(), InvoiceSearch::fromInput($input)->totals());
 
         // Open and unpaid: $75.00 open, and $250.00 + $120.50 + $80.00 unpaid.
-        $this->assertSame(['count' => 4, 'total' => 52550, 'unpaid' => 45050], $totals([]));
+        $this->assertSame(['count' => 4, 'total' => 52550, 'owing' => 45050], $totals([]));
         // A cancelled invoice is counted but its money is not.
-        $this->assertSame(['count' => 6, 'total' => 102550, 'unpaid' => 45050], $totals(['show' => 'all']));
-        $this->assertSame(['count' => 1, 'total' => 0, 'unpaid' => 0], $totals(['show' => 'cancelled']));
-        $this->assertSame(['count' => 1, 'total' => 50000, 'unpaid' => 0], $totals(['show' => 'paid']));
-        $this->assertSame(['count' => 2, 'total' => 33000, 'unpaid' => 33000], $totals(['client' => $this->client->id]));
-        $this->assertSame(['count' => 0, 'total' => 0, 'unpaid' => 0], $totals(['q' => 'nothing']));
+        $this->assertSame(['count' => 6, 'total' => 102550, 'owing' => 45050], $totals(['show' => 'all']));
+        $this->assertSame(['count' => 1, 'total' => 0, 'owing' => 0], $totals(['show' => 'cancelled']));
+        $this->assertSame(['count' => 1, 'total' => 50000, 'owing' => 0], $totals(['show' => 'paid']));
+        $this->assertSame(['count' => 2, 'total' => 33000, 'owing' => 33000], $totals(['client' => $this->client->id]));
+        $this->assertSame(['count' => 0, 'total' => 0, 'owing' => 0], $totals(['q' => 'nothing']));
     }
 
     public function test_the_list_shows_each_invoice_marks_the_overdue_and_links_from_the_sidebar(): void
@@ -184,7 +184,7 @@ class InvoiceManagerTest extends TestCase
                 '1003', 'bg-danger">Cancelled', '$999.00',
                 'href="'.route('invoices.show', $overdue).'"', '1002', 'bg-warning">Unpaid', 'bg-danger ms-1">Overdue', 'text-danger', '3 Jun 2026', '$250.00',
                 '1001', 'bg-success">Paid', 'PO-881', '$500.00',
-                '6 invoices', '$450.50 of it on unpaid invoices', '$1,025.50',
+                '6 invoices', '$1,025.50', '$450.50',
             ], false)
             ->assertSee('<option value="all" selected>', false)
             ->assertSeeInOrder(['<li class="menuitem-active">', 'href="'.route('invoices.index').'" class="active"', 'Invoices'], false);

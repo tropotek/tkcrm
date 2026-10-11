@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Enums\InvoiceStatus;
+use App\Enums\PaymentMethod;
 use App\Facades\Settings;
 use App\Invoices\InvoiceNumber;
 use App\Invoices\InvoiceTotals;
@@ -304,6 +305,80 @@ class Invoice extends Model
     public function tasks(): Builder
     {
         return Task::whereIn('invoice_line_id', $this->lines()->select('id'))->orderBy('id');
+    }
+
+    /**
+     * What has been paid against it so far.
+     */
+    public function paidTotal(): Money
+    {
+        // A list loads the sum with the invoices (withSum), so that it is not a query each.
+        if (array_key_exists('payments_sum_amount', $this->attributes)) {
+            return Money::cents((int) $this->attributes['payments_sum_amount']);
+        }
+
+        return Money::sum($this->payments->map(fn (Payment $payment) => $payment->amount));
+    }
+
+    /**
+     * What is still owing: its stored total less its payments while it is unpaid, and nothing
+     * for an invoice that is open, paid or cancelled.
+     */
+    public function outstanding(): Money
+    {
+        return $this->status() === InvoiceStatus::Unpaid
+            ? $this->total->subtract($this->paidTotal())
+            : Money::zero();
+    }
+
+    /**
+     * Why a payment of an amount cannot be recorded, or null when it can: the invoice must be
+     * unpaid, and the amount above zero and no more than is still owing. There are no overpayments.
+     */
+    public function paymentProblem(Money $amount): ?string
+    {
+        return match (true) {
+            $this->status() !== InvoiceStatus::Unpaid => 'A payment can only be recorded against an unpaid invoice.',
+            ! $amount->isPositive() => 'The amount must be above zero.',
+            $amount->greaterThan($this->outstanding()) => "The amount is more than the {$this->outstanding()->format()} still owing.",
+            default => null,
+        };
+    }
+
+    /**
+     * Record money received. When the payments reach the total the invoice is paid, dated the
+     * day of this payment. Nothing is sent: a receipt is the caller's choice.
+     */
+    public function recordPayment(Money $amount, PaymentMethod $method, DateTimeInterface $receivedAt, ?string $notes = null): Payment
+    {
+        if ($problem = $this->paymentProblem($amount)) {
+            throw new LogicException($problem);
+        }
+
+        return DB::transaction(function () use ($amount, $method, $receivedAt, $notes) {
+            $payment = $this->payments()->create(['amount' => $amount, 'method' => $method, 'received_at' => $receivedAt, 'notes' => $notes]);
+            $this->unsetRelation('payments');
+
+            if ($this->outstanding()->isZero()) {
+                $this->forceFill(['paid_on' => LocalTime::of($payment->received_at)->toDateString()])->save();
+            }
+
+            return $payment;
+        });
+    }
+
+    /**
+     * Take a payment back, as one recorded by mistake. A paid invoice is unpaid again.
+     */
+    public function removePayment(Payment $payment): void
+    {
+        $payment->invoice_id === $this->id || throw new LogicException('That payment is not for this invoice.');
+
+        DB::transaction(function () use ($payment) {
+            $payment->delete();
+            $this->unsetRelation('payments');
+            $this->forceFill(['paid_on' => null])->save();
+        });
     }
 
     private static function day(?DateTimeInterface $on): string

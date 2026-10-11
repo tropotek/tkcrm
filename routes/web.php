@@ -6,6 +6,7 @@ use App\Http\Controllers\HealthController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceLineController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductPriceController;
@@ -42,6 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/invoices/{invoice}/reopen', [InvoiceController::class, 'reopen'])->name('invoices.reopen');
     Route::get('/invoices/{invoice}/cancel', [InvoiceController::class, 'confirmCancel'])->name('invoices.cancel.confirm');
     Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');
+    Route::resource('invoices.payments', PaymentController::class)->shallow()->only('create', 'store', 'destroy');
     Route::resource('invoices.lines', InvoiceLineController::class)->shallow()->except('index', 'show');
 
     // A task is never deleted: it is cancelled.

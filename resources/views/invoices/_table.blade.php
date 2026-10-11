@@ -3,6 +3,7 @@
     Its sort and paging links are boosted: they swap this element and push the URL.
     $totals: what every matching invoice adds up to, not this page alone.
     An issued invoice shows its stored total; an open one what its lines come to now.
+    Owing is what is left of an unpaid invoice after its payments.
 --}}
 @php
     $columns = ['number' => 'Number', 'client' => 'Client', 'issued' => 'Issued', 'due' => 'Due', 'total' => 'Total'];
@@ -33,6 +34,7 @@
                     <th>{!! $heading('due') !!}</th>
                     <th>Purchase order</th>
                     <th class="text-end">{!! $heading('total') !!}</th>
+                    <th class="text-end">Owing</th>
                 </tr>
             </thead>
             <tbody>
@@ -55,23 +57,20 @@
                         <td @class(['text-nowrap', 'text-danger fw-medium' => $overdue])>{{ $invoice->due_on?->format('j M Y') }}</td>
                         <td>{{ $invoice->purchase_order }}</td>
                         <td class="text-end text-nowrap">{{ $invoice->totals()->total->format() }}</td>
+                        <td @class(['text-end text-nowrap', 'text-danger fw-medium' => $overdue])>{{ $invoice->outstanding()->isZero() ? '' : $invoice->outstanding()->format() }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="text-muted">{{ $search->isFiltered() ? 'No invoices match.' : 'No open or unpaid invoices.' }}</td>
+                        <td colspan="8" class="text-muted">{{ $search->isFiltered() ? 'No invoices match.' : 'No open or unpaid invoices.' }}</td>
                     </tr>
                 @endforelse
             </tbody>
             @if ($invoices->isNotEmpty())
                 <tfoot>
                     <tr class="fw-semibold">
-                        <td colspan="6">
-                            {{ $totals['count'] }} {{ Str::plural('invoice', $totals['count']) }}
-                            @unless ($totals['unpaid']->isZero())
-                                <span class="fw-normal text-muted ms-2">{{ $totals['unpaid']->format() }} of it on unpaid invoices</span>
-                            @endunless
-                        </td>
+                        <td colspan="6">{{ $totals['count'] }} {{ Str::plural('invoice', $totals['count']) }}</td>
                         <td class="text-end text-nowrap">{{ $totals['total']->format() }}</td>
+                        <td class="text-end text-nowrap">{{ $totals['owing']->isZero() ? '' : $totals['owing']->format() }}</td>
                     </tr>
                 </tfoot>
             @endif

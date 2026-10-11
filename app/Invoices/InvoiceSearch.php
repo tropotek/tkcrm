@@ -62,7 +62,7 @@ final readonly class InvoiceSearch
     }
 
     /**
-     * The invoices that match, in order, each with its client. Open invoices, which have no
+     * The invoices that match, in order, each with its client and what has been paid on it. Open invoices, which have no
      * number or dates yet, come first in the default order: the newest work is at the top.
      *
      * @return Builder<Invoice>
@@ -86,11 +86,11 @@ final readonly class InvoiceSearch
     }
 
     /**
-     * What every matching invoice adds up to: how many there are, their totals, and the part of
-     * that on unpaid invoices. An issued invoice counts at its stored total, an open one at what
-     * its lines come to now, and a cancelled one not at all.
+     * What every matching invoice adds up to: how many there are, their totals, and what is still
+     * owing on the unpaid ones after their payments. An issued invoice counts at its stored total,
+     * an open one at what its lines come to now, and a cancelled one not at all.
      *
-     * @return array{count: int, total: Money, unpaid: Money}
+     * @return array{count: int, total: Money, owing: Money}
      */
     public function totals(): array
     {
@@ -100,7 +100,7 @@ final readonly class InvoiceSearch
         return [
             'count' => $invoices->count(),
             'total' => Money::sum($counted->map(fn (Invoice $invoice) => $invoice->totals()->total)),
-            'unpaid' => Money::sum($counted->filter(fn (Invoice $invoice) => $invoice->status() === InvoiceStatus::Unpaid)->map(fn (Invoice $invoice) => $invoice->totals()->total)),
+            'owing' => Money::sum($counted->map(fn (Invoice $invoice) => $invoice->outstanding())),
         ];
     }
 
@@ -163,6 +163,7 @@ final readonly class InvoiceSearch
         return Invoice::query()
             ->select('invoices.*')
             ->join('companies', 'companies.id', '=', 'invoices.company_id')
+            ->withSum('payments', 'amount')
             ->when($this->text !== '', fn (Builder $query) => $query->where(function (Builder $query) use ($like) {
                 $query->whereRaw("CAST(invoices.number AS TEXT) LIKE ? ESCAPE '\\'", [$like])
                     ->orWhereRaw("invoices.purchase_order LIKE ? ESCAPE '\\'", [$like]);
