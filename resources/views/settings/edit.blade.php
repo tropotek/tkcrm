@@ -76,6 +76,17 @@
                         </div>
 
                         <div class="mb-3">
+                            <label for="next_invoice_number" class="form-label">Next invoice number</label>
+                            <input type="number" id="next_invoice_number" name="next_invoice_number" value="{{ old('next_invoice_number', $settings['next_invoice_number']) }}" min="1" step="1" required
+                                @class(['form-control', 'is-invalid' => $errors->has('next_invoice_number')])>
+                            @error('next_invoice_number')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @else
+                                <div class="form-text">The number the next invoice takes when it is issued. It goes up by one each time, and can be raised here but not put back over a number already used.</div>
+                            @enderror
+                        </div>
+
+                        <div class="mb-3">
                             <label for="payment_instructions" class="form-label">Payment instructions</label>
                             <textarea id="payment_instructions" name="payment_instructions" rows="5"
                                 @class(['form-control', 'is-invalid' => $errors->has('payment_instructions')])>{{ old('payment_instructions', $settings['payment_instructions']) }}</textarea>

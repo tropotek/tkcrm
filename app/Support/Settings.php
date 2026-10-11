@@ -2,6 +2,8 @@
 
 namespace App\Support;
 
+use App\Invoices\InvoiceNumber;
+use Closure;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -51,6 +53,19 @@ class Settings
                 'default' => 14,
                 'type' => 'int',
                 'rules' => ['required', 'integer', 'between:0,365'],
+            ],
+            // The number the next invoice issued takes. Only App\Invoices\InvoiceNumber hands numbers
+            // out and moves this on; the settings page can raise it but not take it back over one in use.
+            'next_invoice_number' => [
+                'default' => InvoiceNumber::FIRST,
+                'type' => 'int',
+                'rules' => ['sometimes', 'required', 'integer', 'max:999999999', function (string $attribute, mixed $value, Closure $fail) {
+                    $highest = InvoiceNumber::highestUsed();
+
+                    if ((int) $value <= $highest) {
+                        $fail($highest === 0 ? 'The next invoice number must be at least 1.' : "The next invoice number must be above {$highest}, the highest already used.");
+                    }
+                }],
             ],
             // The product a new time log is charged as.
             'default_labour_product_id' => [
@@ -108,6 +123,14 @@ class Settings
         $defaults = array_map(fn (array $definition) => $definition['default'], $this->definitions());
 
         return array_merge($defaults, array_intersect_key($this->stored, $defaults));
+    }
+
+    /**
+     * Read the table again on the next read, after something wrote to it without going through set().
+     */
+    public function refresh(): void
+    {
+        $this->stored = null;
     }
 
     public function get(string $key): mixed

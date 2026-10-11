@@ -93,6 +93,7 @@ class SettingsPageTest extends TestCase
             'site_name' => 'Acme Books',
             'owner_company_id' => null,
             'overdue_days' => 30,
+            'next_invoice_number' => 1,
             'default_labour_product_id' => null,
             'time_logs_billable' => false,
             'payment_instructions' => "Pay by transfer.\nBSB 000-000",

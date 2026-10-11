@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static array<string, array{default: mixed, type: string, rules: array<int, mixed>}> definitions()
  * @method static string percentage(string $key)
  * @method static void setPercentage(string $key, string $percentage)
+ * @method static void refresh()
  *
  * @see \App\Support\Settings
  */
