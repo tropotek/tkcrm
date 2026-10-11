@@ -3,6 +3,8 @@
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceLineController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
@@ -33,6 +35,10 @@ Route::middleware('auth')->group(function () {
     Route::resource('companies', CompanyController::class)->except('destroy');
 
     Route::resource('projects', ProjectController::class);
+
+    // There is no list yet (task 45). POST finds or starts a client's open invoice.
+    Route::resource('invoices', InvoiceController::class)->except('index', 'create');
+    Route::resource('invoices.lines', InvoiceLineController::class)->shallow()->except('index', 'show');
 
     // A task is never deleted: it is cancelled.
     Route::resource('tasks', TaskController::class)->except('destroy');

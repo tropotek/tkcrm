@@ -55,7 +55,9 @@
                         @unless ($task->priority === TaskPriority::None)
                             <span class="badge bg-{{ $task->priority->colour() }}">{{ $task->priority->label() }} priority</span>
                         @endunless
-                        @if ($task->invoiced_at)
+                        @if ($task->invoiceLine)
+                            <a href="{{ route('invoices.show', $task->invoiceLine->invoice_id) }}" class="badge bg-info">Billed: see the invoice</a>
+                        @elseif ($task->invoiced_at)
                             <span class="badge bg-info">Billed</span>
                         @endif
                     </h4>

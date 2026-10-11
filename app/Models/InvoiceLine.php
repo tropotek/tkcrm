@@ -76,6 +76,14 @@ class InvoiceLine extends Model
     }
 
     /**
+     * Made from another record (a task's time), which is where it is changed, not on the invoice.
+     */
+    public function isFromSource(): bool
+    {
+        return $this->source_id !== null;
+    }
+
+    /**
      * @return BelongsTo<Invoice, $this>
      */
     public function invoice(): BelongsTo

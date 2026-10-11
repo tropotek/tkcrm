@@ -42,6 +42,8 @@ docker compose build app                          # after changing the Dockerfil
 | `worker` | — | `queue:listen` and `schedule:work` in one container. Opt-in (`--profile worker`), so dev never bills, mails or pings by itself |
 | `mailpit` | http://localhost:8781 | catches all outgoing mail |
 
+In dev the page loads its scripts from the Vite server's own address (the LAN IP in the page source), so open the app on that address, not `localhost`, when checking it in a browser: on `localhost` htmx and Alpine never load.
+
 The ports come from `APP_PORT`, `VITE_PORT` and `MAILPIT_PORT` in `.env`. Wicket's dev stack uses 8777 and 5777, Nugget's 8778, 5778 and 8779.
 
 Without the worker, queued jobs (all client mail from task 50 on) wait in the `jobs` table. Start the worker, or run `docker compose exec app php artisan queue:work --once`, to send them to Mailpit.
@@ -119,6 +121,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - A product's price is kept and typed without GST. While GST is on, the product list adds an "Inc. GST" column worked out from `Gst::rate()` for reading only; nothing stores a price with GST in it.
 - GST is one rate on a whole invoice, or none: it is not set per line and no product is exempt. `App\Invoices\Gst::rate()` is the rate in force (0 with the `gst_enabled` setting off), which an open invoice is worked out at. Issuing stores `gst_rate` on the invoice with its totals, so an issued invoice keeps what it charged. `$invoice->totals()->chargesGst()` says whether it did.
 - An invoice number comes only from `App\Invoices\InvoiceNumber::allocate()`, called first thing inside the transaction that issues the invoice. It moves the `next_invoice_number` setting on in the database; never work a number out from `Settings::get()` or `max(number)`.
+- An invoice is changed only while `$invoice->isOpen()`: its details and lines in the shared dialog from its page (`InvoiceController`, `InvoiceLineController`), everything else answering 403. A line with a source (`$line->isFromSource()`, a task's time) is never edited or deleted on the invoice: re-opening the task takes it off.
 - Whatever bills a client adds a line to `$company->openInvoice()`, which finds the company's open invoice or makes one.
 - An invoice line (`App\Models\InvoiceLine`) copies its product code, description and unit price; it does not point at a product. Its quantity is a decimal string of up to four places and a float is refused. Its `source` is the record it was made from (a task), by morph map name.
 - The invoices migration is dated before the tasks one, because `tasks.invoice_line_id` is a foreign key to `invoice_lines`.
