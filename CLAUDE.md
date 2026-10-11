@@ -116,6 +116,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - An invoice (`App\Models\Invoice`) belongs to a company and is open until issued. Its number, dates and stored totals are not fillable: issuing, paying, cancelling and re-opening set them. 
 - An invoice's figures come from `$invoice->totals()` (`App\Invoices\InvoiceTotals`): the stored ones once issued, calculated from the lines until then. Nothing else adds up lines. A line's own total is `$line->total()`. GST is added on top of prices, per line, after the line's share of the discount.
 - An invoice's status is `$invoice->status()` (`App\Enums\InvoiceStatus`: cancelled, else paid, else unpaid once issued, else open), with `Invoice::withStatus()` as its scope.
+- A new invoice line's GST rate comes from `App\Invoices\Gst::rateFor($product)`: 0 with GST off or for a GST-free product, else the `gst_rate` setting. A line keeps the rate it was made with, so the setting changes new lines only. A task's line is GST-free only if all its billable time is.
 - Whatever bills a client adds a line to `$company->openInvoice()`, which finds the company's open invoice or makes one.
 - An invoice line (`App\Models\InvoiceLine`) copies its product code, description and unit price; it does not point at a product. Its quantity is a decimal string of up to four places and a float is refused. Its `source` is the record it was made from (a task), by morph map name.
 - The invoices migration is dated before the tasks one, because `tasks.invoice_line_id` is a foreign key to `invoice_lines`.

@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Attachments\HasAttachments;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
+use App\Invoices\Gst;
 use App\Support\Duration;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
@@ -144,7 +145,8 @@ class Task extends Model
      * Close the task and bill its time: one line on the client's open invoice, coded TSK- and
      * the task's id, for the billable logs each priced at its own rate. The line is one of the
      * whole amount, so it comes to exactly what the logs do. A task with no billable time closes
-     * without a line. Nothing is issued or sent: the line waits on the open invoice.
+     * without a line. The line is charged GST, when GST is on, unless every billable log is on a
+     * GST-free product. Nothing is issued or sent: the line waits on the open invoice.
      *
      * @return ?InvoiceLine the line it was billed as
      */
@@ -154,7 +156,7 @@ class Task extends Model
 
         return DB::transaction(function () {
             $now = CarbonImmutable::now();
-            $billable = $this->logs()->where('billable', true)->get();
+            $billable = $this->logs()->where('billable', true)->with('product')->get();
             $line = null;
 
             if ($billable->sum('minutes') > 0) {
@@ -163,6 +165,8 @@ class Task extends Model
                     'description' => $this->subject.' — '.Duration::format($billable->sum('minutes')),
                     'quantity' => '1',
                     'unit_price' => Money::sum($billable->map->amount()),
+                    // One line has one rate: it is GST-free only if all the time on it is.
+                    'gst_rate' => Gst::rate(gstFree: $billable->every(fn (TaskLog $log) => $log->product->gst_free)),
                 ]);
                 $line->source()->associate($this)->save();
 
