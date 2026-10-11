@@ -5,6 +5,8 @@ namespace App\Models;
 use App\Attachments\HasAttachments;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
+use App\Support\Duration;
+use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Database\Factories\TaskFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 use LogicException;
 
 /**
@@ -116,12 +119,12 @@ class Task extends Model
     }
 
     /**
-     * Its time is on an invoice that can no longer change, so it cannot be re-opened.
-     * Until closing a task bills it (task 36), any task with an invoice line counts.
+     * Its time is on an invoice that can no longer change (issued or cancelled), so it cannot be
+     * re-opened. A line on an open invoice is no lock: re-opening takes it off.
      */
     public function isLockedByInvoice(): bool
     {
-        return $this->invoice_line_id !== null;
+        return $this->invoiceLine !== null && ! $this->invoiceLine->invoice->isOpen();
     }
 
     public function canReopen(): bool
@@ -137,14 +140,46 @@ class Task extends Model
         return $this->isOpen();
     }
 
-    public function close(): void
+    /**
+     * Close the task and bill its time: one line on the client's open invoice, coded TSK- and
+     * the task's id, for the billable logs each priced at its own rate. The line is one of the
+     * whole amount, so it comes to exactly what the logs do. A task with no billable time closes
+     * without a line. Nothing is issued or sent: the line waits on the open invoice.
+     *
+     * @return ?InvoiceLine the line it was billed as
+     */
+    public function close(): ?InvoiceLine
     {
         $this->isOpen() || throw new LogicException('Only an open task can be closed.');
 
-        $this->closed_at = CarbonImmutable::now();
-        $this->save();
+        return DB::transaction(function () {
+            $now = CarbonImmutable::now();
+            $billable = $this->logs()->where('billable', true)->get();
+            $line = null;
+
+            if ($billable->sum('minutes') > 0) {
+                $line = $this->company->openInvoice()->lines()->make([
+                    'product_code' => "TSK-{$this->id}",
+                    'description' => $this->subject.' — '.Duration::format($billable->sum('minutes')),
+                    'quantity' => '1',
+                    'unit_price' => Money::sum($billable->map->amount()),
+                ]);
+                $line->source()->associate($this)->save();
+
+                $this->invoiced_at = $now;
+                $this->invoice_line_id = $line->id;
+            }
+
+            $this->closed_at = $now;
+            $this->save();
+
+            return $line;
+        });
     }
 
+    /**
+     * Cancelling bills nothing.
+     */
     public function cancel(): void
     {
         $this->isOpen() || throw new LogicException('Only an open task can be cancelled.');
@@ -153,13 +188,27 @@ class Task extends Model
         $this->save();
     }
 
-    public function reopen(): void
+    /**
+     * Open the task again, taking its line off the open invoice if closing put one there.
+     *
+     * @return bool whether a line was taken off
+     */
+    public function reopen(): bool
     {
         $this->canReopen() || throw new LogicException('This task cannot be re-opened.');
 
-        $this->closed_at = null;
-        $this->cancelled_at = null;
-        $this->save();
+        return DB::transaction(function () {
+            $line = $this->invoiceLine;
+
+            $this->closed_at = null;
+            $this->cancelled_at = null;
+            $this->invoiced_at = null;
+            $this->invoice_line_id = null;
+            $this->save();
+            $this->unsetRelation('invoiceLine');
+
+            return (bool) $line?->delete();
+        });
     }
 
     /**

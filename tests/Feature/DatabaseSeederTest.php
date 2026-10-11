@@ -7,6 +7,7 @@ use App\Enums\Cycle;
 use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
 use App\Models\Company;
+use App\Models\InvoiceLine;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Project;
@@ -137,6 +138,10 @@ class DatabaseSeederTest extends TestCase
         $this->assertSame('Online ordering', $form->project->name);
         $this->assertSame([9000, 9000, 13500], $form->logs->map(fn (TaskLog $log) => $log->rate->inCents())->all());
         $this->assertSame(1, TaskLog::where('billable', false)->count());
+
+        // The closed task was billed: 25 minutes at $90.00 an hour, waiting on an open invoice.
+        $line = Task::where('subject', 'Fix the opening hours on the contact page')->sole()->invoiceLine;
+        $this->assertSame([3750, true, 1], [$line->unit_price->inCents(), $line->invoice->isOpen(), InvoiceLine::count()]);
     }
 
     public function test_it_seeds_nothing_in_production(): void

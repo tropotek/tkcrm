@@ -15,6 +15,7 @@ use App\Tasks\TaskSearch;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class TaskController extends Controller
@@ -113,9 +114,11 @@ class TaskController extends Controller
             return $refused;
         }
 
-        $task->close();
+        $line = $task->close();
 
-        return redirect()->route('tasks.show', $task)->with('success', "{$task->subject} closed.");
+        return redirect()->route('tasks.show', $task)->with('success', $line
+            ? "{$task->subject} closed, and its ".Str::after($line->description, ' — ')." ({$line->unit_price->format()}) added to the open invoice for {$task->company->name}."
+            : "{$task->subject} closed. It has no billable time, so nothing was billed.");
     }
 
     public function cancel(Task $task): RedirectResponse
@@ -138,12 +141,12 @@ class TaskController extends Controller
         }
 
         if ($task->isLockedByInvoice()) {
-            return $back->with('error', "{$task->subject} has been billed, so it cannot be re-opened.");
+            return $back->with('error', "{$task->subject} is on an issued invoice, so it cannot be re-opened.");
         }
 
-        $task->reopen();
-
-        return $back->with('success', "{$task->subject} re-opened.");
+        return $back->with('success', $task->reopen()
+            ? "{$task->subject} re-opened, and its line taken off the open invoice."
+            : "{$task->subject} re-opened.");
     }
 
     /**

@@ -1,8 +1,8 @@
 {{--
     A task's own page: its details, its attachments and its time logs, which are added and edited
     in the shared dialog. An open task can be edited,
-    closed or cancelled. A closed or cancelled one is read-only until it is re-opened, which it
-    cannot be once its time is on an invoice.
+    closed or cancelled. Closing bills its time to the client's open invoice. A closed or cancelled
+    one is read-only until it is re-opened, which it cannot be once its line is on an issued invoice.
     $loggedMinutes, $billableMinutes and $worth: its time logs, added up.
 --}}
 @php
@@ -16,7 +16,8 @@
     <x-slot:actions>
         @if ($task->isOpen())
             <a href="{{ route('tasks.edit', $task) }}" class="btn btn-primary"><i class="ri-pencil-line me-1"></i>Edit</a>
-            <form method="POST" action="{{ route('tasks.close', $task) }}" class="d-inline" onsubmit="return confirm('Close this task?')">
+            <form method="POST" action="{{ route('tasks.close', $task) }}" class="d-inline"
+                onsubmit="return confirm(@js($billableMinutes ? 'Close this task? Its billable time goes onto the client\'s open invoice.' : 'Close this task? It has no billable time, so nothing will be billed.'))">
                 @csrf
                 <button type="submit" class="btn btn-success"><i class="ri-check-line me-1"></i>Close</button>
             </form>
@@ -35,7 +36,13 @@
     @unless ($task->isOpen())
         <div class="alert alert-secondary">
             This task is {{ $status->value }}, so it cannot be changed.
-            {{ $task->canReopen() ? 'Re-open it to change it.' : 'It has been billed, so it cannot be re-opened.' }}
+            @if (! $task->canReopen())
+                Its time is on an issued invoice, so it cannot be re-opened.
+            @elseif ($task->invoice_line_id)
+                Re-open it to change it. Re-opening it takes its line off the open invoice.
+            @else
+                Re-open it to change it.
+            @endif
         </div>
     @endunless
 

@@ -118,7 +118,8 @@ class DatabaseSeeder extends Seeder
     }
 
     /**
-     * Task categories, and a few tasks with time logged on them, found again by subject.
+     * Task categories, and a few tasks with time logged on them, found again by subject. The closed
+     * one leaves its line on its client's open invoice.
      */
     private function tasks(): void
     {
@@ -145,17 +146,14 @@ class DatabaseSeeder extends Seeder
                 continue;
             }
 
-            $task = Task::factory()
-                ->when($status === 'closed', fn ($factory) => $factory->closed())
-                ->when($status === 'cancelled', fn ($factory) => $factory->cancelled())
-                ->create([
-                    'company_id' => $company->id,
-                    'project_id' => $project ? Project::where('name', $project)->value('id') : null,
-                    'task_category_id' => TaskCategory::where('name', $category)->value('id'),
-                    'subject' => $subject,
-                    'priority' => $priority,
-                    'estimated_minutes' => $estimate,
-                ]);
+            $task = Task::factory()->create([
+                'company_id' => $company->id,
+                'project_id' => $project ? Project::where('name', $project)->value('id') : null,
+                'task_category_id' => TaskCategory::where('name', $category)->value('id'),
+                'subject' => $subject,
+                'priority' => $priority,
+                'estimated_minutes' => $estimate,
+            ]);
 
             foreach ($logs as [$product, $daysAgo, $minutes, $billable]) {
                 TaskLog::factory()->for($task)->for($product)->create([
@@ -164,6 +162,13 @@ class DatabaseSeeder extends Seeder
                     'billable' => $billable,
                 ]);
             }
+
+            // Closing bills the task's time to the client's open invoice, as it does on the page.
+            match ($status) {
+                'closed' => $task->close(),
+                'cancelled' => $task->cancel(),
+                default => null,
+            };
         }
     }
 }

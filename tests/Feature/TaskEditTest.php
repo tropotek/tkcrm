@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Models\Company;
+use App\Models\Invoice;
 use App\Models\InvoiceLine;
 use App\Models\Project;
 use App\Models\Task;
@@ -235,7 +236,7 @@ class TaskEditTest extends TestCase
         $this->actingAs($this->user)
             ->post("/tasks/{$task->id}/close")
             ->assertRedirect(route('tasks.show', $task))
-            ->assertSessionHas('success', 'Build the order form closed.');
+            ->assertSessionHas('success', 'Build the order form closed. It has no billable time, so nothing was billed.');
         $this->assertSame(['2026-06-15 02:00:00', null, TaskStatus::Closed], [$task->refresh()->closed_at->toDateTimeString(), $task->cancelled_at, $task->status()]);
 
         $this->actingAs($this->user)
@@ -305,21 +306,21 @@ class TaskEditTest extends TestCase
     public function test_a_billed_task_cannot_be_reopened(): void
     {
         $task = $this->task('closed');
-        $task->forceFill(['invoiced_at' => now(), 'invoice_line_id' => InvoiceLine::factory()->create()->id])->save();
+        $task->forceFill(['invoiced_at' => now(), 'invoice_line_id' => InvoiceLine::factory()->for(Invoice::factory()->issued())->create()->id])->save();
 
         $this->assertTrue($task->isLockedByInvoice());
         $this->assertFalse($task->canReopen());
 
         $this->actingAs($this->user)
             ->get("/tasks/{$task->id}")
-            ->assertSee('It has been billed, so it cannot be re-opened.')
+            ->assertSee('Its time is on an issued invoice, so it cannot be re-opened.')
             ->assertSee('Billed')
             ->assertDontSee('action="'.route('tasks.reopen', $task).'"', false);
 
         $this->actingAs($this->user)
             ->post("/tasks/{$task->id}/reopen")
             ->assertRedirect(route('tasks.show', $task))
-            ->assertSessionHas('error', 'Build the order form has been billed, so it cannot be re-opened.');
+            ->assertSessionHas('error', 'Build the order form is on an issued invoice, so it cannot be re-opened.');
 
         $this->assertSame(TaskStatus::Closed, $task->refresh()->status());
 
