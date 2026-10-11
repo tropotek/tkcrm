@@ -14,7 +14,7 @@ The live tktask at `https://task.ttek.org/` sends real invoices. Nothing here co
 
 - PHP 8.4, Laravel 13, Octane on FrankenPHP
 - SQLite in WAL mode
-- Vite, Bootstrap 5 with the Minton template, htmx and Alpine (tasks 02 and 03)
+- Vite, Bootstrap 5 with the Minton default skin (light and dark), ApexCharts for charts; htmx and Alpine come with the base layout (task 03)
 - PHPUnit for tests (not Pest), Pint for code style
 
 ## Commands
@@ -52,6 +52,9 @@ The containers load `.env` as real environment variables, so a change to `.env` 
 - `data/`: runtime data, gitignored. The SQLite database is `data/tkcrm.sqlite` (WAL mode). In production this directory is the mounted volume.
 - `database/migrations/`: schema.
 - `Dockerfile`, `docker-compose.yml`, `docker/`: the dev image and containers. `docker/Caddyfile` is Octane's FrankenPHP site config.
+- `resources/scss/`: `app.scss` and `icons.scss` are the entries. `config/default` and `custom/` are lifted from Minton (`~/Projects/Dev/Minton/Minton/resources/scss`).
+- `resources/js/`: `app.js` is the entry. `minton/` holds the template's own scripts.
+- `resources/fonts/`, `resources/images/`: icon fonts and images the SCSS refers to.
 - `tests/Feature`, `tests/Unit`: PHPUnit tests.
 - `_notes/`: local planning docs, gitignored.
 - `version.md`: the app version.
@@ -64,4 +67,7 @@ The containers load `.env` as real environment variables, so a change to `.env` 
 - Invoice totals, GST, cycle dates and the profit and loss are written test-first.
 - Real client data never enters this repo: no copy of the tktask database, its `data/` files, client names, addresses, emails or invoices in code, fixtures, tests or seeders. The importer is tested against a small made-up fixture database.
 - No test sends real mail.
+- jQuery is imported only by the scripts in `resources/js/minton/` and is not a global. tkcrm's own front-end code does not use it.
+- Only the Minton partials tkcrm uses are in the repo. To use another, copy it from Minton and import it in `app.scss`. In a copied partial, a `url()` path is relative to that partial's own file.
+- ApexCharts is the only chart library.
 - Run Pint before committing.
