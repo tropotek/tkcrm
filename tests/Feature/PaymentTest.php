@@ -232,12 +232,12 @@ class PaymentTest extends TestCase
         $open->recordPayment(Money::cents(1000), PaymentMethod::Cash, now());
     }
 
-    public function test_recording_a_payment_sends_nothing(): void
+    public function test_a_payment_recorded_on_the_invoice_itself_sends_nothing(): void
     {
         Mail::fake();
         Queue::fake();
 
-        $this->pay(['amount' => '1000'])->assertNoContent();
+        $this->invoice->recordPayment(Money::cents(100000), PaymentMethod::Eft, now());
 
         Mail::assertNothingOutgoing();
         Queue::assertNothingPushed();

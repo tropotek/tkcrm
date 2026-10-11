@@ -4,7 +4,6 @@ namespace App\Mail;
 
 use App\Enums\InvoiceStatus;
 use App\Enums\MailTemplate;
-use App\Facades\Settings;
 use App\Invoices\InvoicePdf;
 use App\Invoices\TaskListPdf;
 use App\Models\Invoice;
@@ -13,7 +12,6 @@ use App\Statements\StatementPdf;
 use App\Support\LocalTime;
 use App\Support\Owner;
 use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Address;
 use Illuminate\Mail\Mailables\Attachment;
 use Illuminate\Mail\Mailables\Content;
 use Illuminate\Mail\Mailables\Envelope;
@@ -24,8 +22,7 @@ use Illuminate\Queue\SerializesModels;
  * (App\Enums\MailTemplate). Send it with `MailLog::send()`, and only when
  * `$invoice->emailProblem()` is null.
  *
- * - To the company's email, with a copy to its accounts email, and a blind copy to the owner
- *   while the `bcc_owner` setting is on.
+ * - It goes to the company, its accounts address and the owner's own copy (App\Mail\ClientEnvelope).
  * - The invoice is attached, and the task list where any of its lines came from tasks.
  * - When the client has other unpaid invoices, one statement is attached in place of a PDF of
  *   each: from the day the oldest of them was issued to today.
@@ -45,19 +42,7 @@ class InvoiceMail extends Mailable
 
     public function envelope(): Envelope
     {
-        $company = $this->invoice->company;
-        $owner = app(Owner::class);
-
-        $to = strtolower((string) $company->email);
-        $cc = strtolower((string) $company->accounts_email);
-        $bcc = Settings::get('bcc_owner') ? strtolower((string) $owner->email()) : '';
-
-        return new Envelope(
-            to: [new Address($to, $company->name)],
-            cc: $cc !== '' && $cc !== $to ? [new Address($cc)] : [],
-            bcc: $bcc !== '' && ! in_array($bcc, [$to, $cc], true) ? [new Address($bcc)] : [],
-            subject: $this->filled()->subject,
-        );
+        return ClientEnvelope::for($this->invoice->company, $this->filled()->subject);
     }
 
     public function content(): Content

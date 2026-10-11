@@ -1,6 +1,7 @@
 {{--
     Records a payment against an unpaid invoice, in the shared dialog.
-    It begins with everything still owing, by EFT, received today.
+    It begins with everything still owing, by EFT, received today, and with a receipt to be emailed
+    if the payment pays the invoice. A client with no email is offered no receipt.
     Its fields are filled from the request when it comes back with errors.
 --}}
 @php
@@ -11,6 +12,9 @@
     $value = fn (string $field, mixed $begin) => $posted ? $posted->input($field) : $begin;
     $today = LocalTime::of(now())->toDateString();
     $method = $value('method', PaymentMethod::Eft->value);
+    // An unticked box posts nothing.
+    $receipt = $posted ? $posted->boolean('send_receipt') : true;
+    $email = $invoice->company->email;
 @endphp
 
 <x-modal title="Record payment" :action="route('invoices.payments.store', $invoice)">
@@ -58,16 +62,26 @@
         </div>
     </div>
 
-    <div class="mb-0">
+    <div class="mb-3">
         <label for="payment_notes" class="form-label">Notes</label>
         <input type="text" id="payment_notes" name="notes" value="{{ $value('notes', '') }}" maxlength="2000"
             @class(['form-control', 'is-invalid' => $errors->has('notes')])>
         @error('notes')
             <div class="invalid-feedback">{{ $message }}</div>
         @else
-            <div class="form-text">A part payment leaves the rest owing. Nothing is sent to the client.</div>
+            <div class="form-text">Your own note: the client does not see it.</div>
         @enderror
     </div>
+
+    @if (filled($email))
+        <div class="form-check">
+            <input type="checkbox" id="payment_send_receipt" name="send_receipt" value="1" class="form-check-input" @checked($receipt)>
+            <label for="payment_send_receipt" class="form-check-label">Email a receipt to {{ $email }} if this pays the invoice in full</label>
+        </div>
+        <div class="form-text">A part payment leaves the rest owing and sends nothing.</div>
+    @else
+        <div class="form-text">A part payment leaves the rest owing. No receipt is emailed: {{ $invoice->company->name }} has no email address.</div>
+    @endif
 
     <x-slot:footer>
         <button type="submit" class="btn btn-primary">Record payment</button>
