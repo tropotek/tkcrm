@@ -1,5 +1,6 @@
 {{--
     The add and edit form.
+    $gstRate: the GST rate in force, in basis points, or 0 with GST off. The price is always typed without GST.
     $inUse: something refers to the product, so it cannot be deleted.
 --}}
 <x-layouts.app :title="$product->exists ? 'Edit '.$product->name : 'Add product'">
@@ -34,7 +35,7 @@
                             </div>
                             <div class="col-sm-6">
                                 <div class="mb-3">
-                                    <label for="price" class="form-label">Price</label>
+                                    <label for="price" class="form-label">{{ $gstRate ? 'Price (ex GST)' : 'Price' }}</label>
                                     <div class="input-group">
                                         <span class="input-group-text">$</span>
                                         <input type="text" id="price" name="price" value="{{ old('price', $product->price->toDecimal()) }}" required inputmode="decimal"
@@ -43,7 +44,12 @@
                                             <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
-                                    <div class="form-text">For labour, the price of an hour.</div>
+                                    <div class="form-text">
+                                        For labour, the price of an hour.
+                                        @if ($gstRate)
+                                            Without GST: an invoice adds {{ App\Support\BasisPoints::format($gstRate) }} to its total.
+                                        @endif
+                                    </div>
                                 </div>
                             </div>
                         </div>

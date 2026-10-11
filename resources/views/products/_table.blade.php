@@ -2,9 +2,11 @@
     The product table and its paging. Sent alone when htmx asks for #product-table.
     Its sort and paging links are boosted: they swap this element and push the URL.
     The tick boxes choose the products for the Update prices button on the page.
+    $gstRate: the GST rate in force, in basis points, or 0 with GST off. A price is kept without GST,
+    which the invoice adds; with GST on, a second column shows what it comes to with it.
 --}}
 @php
-    $columns = ['code' => 'Code', 'name' => 'Name', 'category' => 'Category', 'price' => 'Price'];
+    $columns = ['code' => 'Code', 'name' => 'Name', 'category' => 'Category', 'price' => $gstRate ? 'Price (ex GST)' : 'Price'];
 
     $heading = function (string $sort) use ($search, $columns) {
         $arrow = $search->sort !== $sort ? '' : ($search->descending ? 'ri-arrow-down-s-line' : 'ri-arrow-up-s-line');
@@ -33,6 +35,9 @@
                     <th>{!! $heading('name') !!}</th>
                     <th>{!! $heading('category') !!}</th>
                     <th class="text-end">{!! $heading('price') !!}</th>
+                    @if ($gstRate)
+                        <th class="text-end text-nowrap">Inc. GST</th>
+                    @endif
                     <th>Cycle</th>
                     <th></th>
                 </tr>
@@ -51,6 +56,9 @@
                         </td>
                         <td>{{ $product->category->name }}</td>
                         <td class="text-end text-nowrap">{{ $product->price->format() }}</td>
+                        @if ($gstRate)
+                            <td class="text-end text-nowrap text-muted">{{ $product->price->add($product->price->rate($gstRate))->format() }}</td>
+                        @endif
                         <td class="text-nowrap">{{ $product->cycle->label() }}</td>
                         <td class="text-end text-nowrap">
                             <a href="{{ route('products.edit', $product) }}" hx-boost="false" class="btn btn-sm btn-light">Edit</a>
@@ -58,7 +66,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="text-muted">{{ $search->isFiltered() ? 'No products match.' : 'No products yet.' }}</td>
+                        <td colspan="{{ $gstRate ? 8 : 7 }}" class="text-muted">{{ $search->isFiltered() ? 'No products match.' : 'No products yet.' }}</td>
                     </tr>
                 @endforelse
             </tbody>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\Cycle;
 use App\Http\Requests\ProductRequest;
+use App\Invoices\Gst;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Products\ProductSearch;
@@ -27,6 +28,7 @@ class ProductController extends Controller
             'search' => $search,
             'products' => $search->query()->paginate(25)->appends($search->toQuery()),
             'categories' => ProductCategory::orderByRaw('name COLLATE NOCASE')->get(),
+            'gstRate' => Gst::rate(),
         ]);
     }
 
@@ -102,6 +104,7 @@ class ProductController extends Controller
                 ->orderByRaw('name COLLATE NOCASE')
                 ->get(),
             'cycles' => Cycle::cases(),
+            'gstRate' => Gst::rate(),
             'inUse' => $product->exists && $product->isInUse(),
         ]);
     }

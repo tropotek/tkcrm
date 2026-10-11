@@ -92,18 +92,35 @@ class ProductManagerTest extends TestCase
         $this->actingAs($this->user)->get('/products?q=zzz')->assertSee('No products match.');
     }
 
-    public function test_a_product_has_nothing_to_do_with_gst_which_is_charged_on_the_whole_invoice(): void
+    public function test_prices_are_kept_without_gst_and_shown_with_it_as_well_while_gst_is_on(): void
     {
-        $product = Product::factory()->create();
+        $product = Product::factory()->create(['name' => 'Web hosting', 'price' => 133055]);
 
-        foreach ([false, true] as $gst) {
-            Settings::set('gst_enabled', $gst);
-            $this->app->forgetScopedInstances();
+        $this->actingAs($this->user)->get('/products')->assertSee('$1,330.55')->assertDontSee('GST');
+        $this->actingAs($this->user)->get('/products?q=zzz')->assertSee('colspan="7"', false);
+        $this->actingAs($this->user)->get('/products/create')->assertDontSee('GST');
+        $this->actingAs($this->user)->get("/products/{$product->id}/edit")->assertDontSee('GST');
 
-            $this->actingAs($this->user)->get('/products')->assertDontSee('GST');
-            $this->actingAs($this->user)->get('/products/create')->assertDontSee('GST');
-            $this->actingAs($this->user)->get("/products/{$product->id}/edit")->assertDontSee('GST');
-        }
+        Settings::set('gst_enabled', true);
+        $this->app->forgetScopedInstances();
+
+        // 10% of $1,330.55 is $133.055, and the half cent goes up.
+        $this->actingAs($this->user)
+            ->get('/products')
+            ->assertSeeInOrder(['Price (ex GST)', 'Inc. GST', 'Web hosting', '$1,330.55', '$1,463.61']);
+        $this->actingAs($this->user)->get('/products?q=zzz')->assertSee('colspan="8"', false);
+        $this->actingAs($this->user)
+            ->get("/products/{$product->id}/edit")
+            ->assertSee('Price (ex GST)')
+            ->assertSee('Without GST: an invoice adds 10% to its total.')
+            ->assertSee('name="price" value="1330.55"', false);
+
+        Settings::setPercentage('gst_rate', '12.5');
+        $this->app->forgetScopedInstances();
+        $this->actingAs($this->user)->get('/products')->assertSee('$1,496.87');
+
+        // The price stored is still the one without GST.
+        $this->assertSame(133055, $product->fresh()->price->inCents());
     }
 
     public function test_a_product_can_be_added_with_its_price_typed_as_dollars(): void
