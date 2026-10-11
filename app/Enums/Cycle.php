@@ -33,4 +33,14 @@ enum Cycle: string
     {
         return $this !== self::Each;
     }
+
+    /**
+     * The cycles a recurring item can have: all but each.
+     *
+     * @return list<self>
+     */
+    public static function recurring(): array
+    {
+        return array_values(array_filter(self::cases(), fn (self $cycle) => $cycle->recurs()));
+    }
 }

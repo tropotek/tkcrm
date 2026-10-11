@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Mail\RedirectAllMail;
 use App\Models\Company;
 use App\Models\Invoice;
+use App\Models\Recurring;
 use App\Models\Task;
 use App\Models\TaskLog;
 use App\Support\Owner;
@@ -44,6 +45,7 @@ class AppServiceProvider extends ServiceProvider
             'task_log' => TaskLog::class,
             'invoice' => Invoice::class,
             'company' => Company::class,
+            'recurring' => Recurring::class,
         ]);
     }
 }

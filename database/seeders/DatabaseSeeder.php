@@ -9,6 +9,7 @@ use App\Models\Company;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Project;
+use App\Models\Recurring;
 use App\Models\Task;
 use App\Models\TaskCategory;
 use App\Models\TaskLog;
@@ -41,6 +42,7 @@ class DatabaseSeeder extends Seeder
         $this->products();
         $this->projects();
         $this->tasks();
+        $this->recurrings();
     }
 
     /**
@@ -169,6 +171,41 @@ class DatabaseSeeder extends Seeder
                 'cancelled' => $task->cancel(),
                 default => null,
             };
+        }
+    }
+
+    /**
+     * Recurring items for the seeded clients, found again by client and description: one following
+     * its product's price, one with a price of its own, one with no product, one inactive and one
+     * that has ended. Dates are set from today.
+     */
+    private function recurrings(): void
+    {
+        // Client, product code, own price in cents, cycle, description, start, then anything else.
+        $recurrings = [
+            ['Wattle Creek Bakery', 'HOST-STD', null, Cycle::Year, 'Web hosting for wattlecreek.example.com', today()->subMonths(11), []],
+            ['Wattle Creek Bakery', 'HOST-MAIL', 1200, Cycle::Month, 'Email hosting, 4 mailboxes', today()->addDays(3), []],
+            ['Ironbark Surveying', 'DOM-AU', null, Cycle::Biannual, 'ironbark.example.com.au', today()->addMonth(), []],
+            ['Ironbark Surveying', null, 18000, Cycle::Quarter, 'Site care plan', today()->addWeeks(2), []],
+            ['Saltbush Yoga Studio', 'HOST-STD', null, Cycle::Year, 'Web hosting for saltbush.example.com', today()->addMonths(2), ['active' => false]],
+            ['Kurrajong Motors', 'DOM-COM', null, Cycle::Year, 'kurrajong.example.com', today()->subYears(2), ['end_on' => today()->subYear(), 'active' => false]],
+        ];
+
+        foreach ($recurrings as [$client, $code, $price, $cycle, $description, $start, $more]) {
+            $company = Company::where('name', $client)->first();
+            $product = $code ? Product::where('code', $code)->first() : null;
+
+            if (! $company || ($code && ! $product) || $company->recurrings()->where('description', $description)->exists()) {
+                continue;
+            }
+
+            Recurring::factory()->for($company)->create([
+                'product_id' => $product?->id,
+                'price' => $price,
+                'cycle' => $cycle,
+                'description' => $description,
+                'start_on' => $start,
+            ] + $more);
         }
     }
 }

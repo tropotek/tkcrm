@@ -90,6 +90,14 @@ class Company extends Model
     }
 
     /**
+     * @return HasMany<Recurring, $this>
+     */
+    public function recurrings(): HasMany
+    {
+        return $this->hasMany(Recurring::class);
+    }
+
+    /**
      * The invoice that what the company is billed next goes onto: its open invoice, made now if
      * it has none. With more than one open, it is the oldest.
      */

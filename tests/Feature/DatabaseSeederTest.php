@@ -11,6 +11,7 @@ use App\Models\InvoiceLine;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Project;
+use App\Models\Recurring;
 use App\Models\Task;
 use App\Models\TaskCategory;
 use App\Models\TaskLog;
@@ -141,6 +142,25 @@ class DatabaseSeederTest extends TestCase
         // The closed task was billed: 25 minutes at $90.00 an hour, waiting on an open invoice.
         $line = Task::where('subject', 'Fix the opening hours on the contact page')->sole()->invoiceLine;
         $this->assertSame([3750, true, 1], [$line->unit_price->inCents(), $line->invoice->isOpen(), InvoiceLine::count()]);
+    }
+
+    public function test_it_makes_recurring_items_of_every_kind_however_often_it_is_seeded(): void
+    {
+        $this->runSeeder();
+        $this->runSeeder();
+
+        $this->assertSame(6, Recurring::count());
+        $this->assertSame(4, Recurring::active()->count());
+        $this->assertSame(2, Recurring::whereNotNull('price')->count());
+
+        $hosting = Recurring::where('description', 'Web hosting for wattlecreek.example.com')->sole();
+        $this->assertTrue($hosting->followsProductPrice());
+        $this->assertSame('$330.00', $hosting->billedPrice()->format());
+        $this->assertSame($hosting->start_on->toDateString(), $hosting->next_on->toDateString());
+
+        $plan = Recurring::where('description', 'Site care plan')->sole();
+        $this->assertNull($plan->product_id);
+        $this->assertSame('$180.00', $plan->billedPrice()->format());
     }
 
     public function test_it_seeds_nothing_in_production(): void

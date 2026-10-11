@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Something sold. Its price is copied onto an invoice line or a time log when that is made,
@@ -56,6 +57,14 @@ class Product extends Model
     }
 
     /**
+     * @return HasMany<Recurring, $this>
+     */
+    public function recurrings(): HasMany
+    {
+        return $this->hasMany(Recurring::class);
+    }
+
+    /**
      * @param  Builder<self>  $query
      */
     public function scopeActive(Builder $query): void
@@ -70,6 +79,7 @@ class Product extends Model
     public function isInUse(): bool
     {
         return Settings::get('default_labour_product_id') === $this->id
-            || TaskLog::where('product_id', $this->id)->exists();
+            || TaskLog::where('product_id', $this->id)->exists()
+            || $this->recurrings()->exists();
     }
 }
