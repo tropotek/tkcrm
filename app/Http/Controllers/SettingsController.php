@@ -3,7 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Facades\Settings;
+use App\Jobs\SendMail;
+use App\Mail\TestMessage;
 use App\Models\Product;
+use App\Support\Owner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -22,6 +25,14 @@ class SettingsController extends Controller
 
         return view('settings.edit', [
             'settings' => $settings,
+            // How mail leaves, from the environment: shown, not edited here.
+            'mail' => [
+                'mailer' => config('mail.default'),
+                'host' => config('mail.mailers.smtp.host'),
+                'port' => config('mail.mailers.smtp.port'),
+                'redirect_to' => config('tkcrm.mail.redirect_to'),
+                'from' => app(Owner::class)->email() ?? config('mail.from.address'),
+            ],
             // Inactive products are left out, except the one already chosen.
             'products' => Product::query()
                 ->where(fn ($query) => $query->where('active', true)->orWhere('id', $settings['default_labour_product_id']))
@@ -53,5 +64,17 @@ class SettingsController extends Controller
         }
 
         return redirect()->route('settings.edit')->with('success', 'Settings saved.');
+    }
+
+    /**
+     * Queue a test message to the signed-in user, to see that mail gets through.
+     */
+    public function testMail(Request $request): RedirectResponse
+    {
+        $email = $request->user()->email;
+
+        SendMail::dispatch(new TestMessage($email));
+
+        return redirect()->route('settings.edit')->with('success', "A test email to {$email} is queued. It is sent when the worker next runs.");
     }
 }

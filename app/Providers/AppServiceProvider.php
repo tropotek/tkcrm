@@ -2,12 +2,15 @@
 
 namespace App\Providers;
 
+use App\Mail\RedirectAllMail;
 use App\Models\Task;
 use App\Models\TaskLog;
 use App\Support\Owner;
 use App\Support\Settings;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -28,6 +31,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        // MAIL_REDIRECT_TO: every message the app sends, whatever sends it.
+        Event::listen(MessageSending::class, RedirectAllMail::class);
 
         // The names records are stored under in polymorphic columns (attachments, and later invoice line
         // sources and the mail log). A model that takes attachments must be listed here.

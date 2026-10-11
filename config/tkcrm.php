@@ -54,4 +54,26 @@ return [
         'keep_read_days' => (int) env('TKCRM_NOTIFICATIONS_KEEP_READ_DAYS', 30),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Mail
+    |--------------------------------------------------------------------------
+    |
+    | How mail is sent (the SMTP server, or the log when none is set) is in
+    | config/mail.php, from the MAIL_ settings in the environment.
+    |
+    | redirect_to: when set, every message goes to this one address instead
+    | of whoever it was for, and its subject says who that was. For trial
+    | runs against real client data.
+    |
+    | retry_after: seconds to wait before each further attempt at a message
+    | that failed to send. Three entries, so three more attempts.
+    |
+    */
+
+    'mail' => [
+        'redirect_to' => env('MAIL_REDIRECT_TO') ?: null,
+        'retry_after' => [60, 300, 900],
+    ],
+
 ];

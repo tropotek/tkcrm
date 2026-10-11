@@ -140,4 +140,38 @@
 
         <button type="submit" class="btn btn-primary mb-4">Save</button>
     </form>
+
+    {{-- How mail leaves is set in the environment (.env), so it is shown here and not edited. --}}
+    <div class="card">
+        <div class="card-body">
+            <h4 class="header-title mb-3">Mail</h4>
+
+            <dl class="row mb-3">
+                <dt class="col-sm-3">Sent by</dt>
+                <dd class="col-sm-9">
+                    @if ($mail['mailer'] === 'smtp')
+                        The mail server at {{ $mail['host'] }}, port {{ $mail['port'] }}
+                    @elseif ($mail['mailer'] === 'log')
+                        Nothing is sent: messages are written to the log
+                    @else
+                        {{ $mail['mailer'] }}
+                    @endif
+                </dd>
+
+                <dt class="col-sm-3">Sent from</dt>
+                <dd class="col-sm-9">{{ $mail['from'] }}</dd>
+
+                @if ($mail['redirect_to'])
+                    <dt class="col-sm-3">Redirected</dt>
+                    <dd class="col-sm-9"><span class="badge bg-warning">Every message goes to {{ $mail['redirect_to'] }}</span> instead of who it is for.</dd>
+                @endif
+            </dl>
+
+            <form method="POST" action="{{ route('settings.test-mail') }}">
+                @csrf
+                <button type="submit" class="btn btn-light"><i class="ri-mail-send-line me-1"></i>Send a test email to {{ auth()->user()->email }}</button>
+            </form>
+            <div class="form-text">These come from the server's environment. A message is queued and sent by the worker; one that fails is tried three more times.</div>
+        </div>
+    </div>
 </x-layouts.app>

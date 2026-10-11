@@ -147,6 +147,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - `GET /products/{id}/lookup` gives a product's code, name, description, price (a decimal string) and cycle as JSON, for a form that fills a line from a product.
 - Do not give an element the id `status` or `preloader`: the Minton skin styles both and hides `#status`.
 - To tell the owner something, send a database notification to every login with `App\Support\NotificationFeed::tellEveryone(...)`. A plain one is `new App\Notifications\Notice($title, $text, $url, $icon)`; one with data of its own gets a class that implements `App\Notifications\Contracts\Presentable`, whose static `present(array $data)` says how it is shown from the stored data alone. The top bar's bell, the notifications page and the browser notification all read that.
+- An email is a `Mailable` sent with `App\Jobs\SendMail::dispatch($mailable)`, never `Mail::send()` from a controller: the job queues it, sets the owner company as the sender, and retries a failed send three times. `MAIL_REDIRECT_TO` in the environment sends every message to one address, with who it was for in the subject (`App\Mail\RedirectAllMail`).
 - Scheduled commands are listed in `routes/console.php`, in UTC, and run only in the worker container.
 - There are no roles or permissions. Every login sees and does everything, so no screen checks an ability for who the user is.
 - Until the app is live, a schema change edits the table's own migration rather than adding a second one; rebuild with `composer fresh`.
