@@ -42,12 +42,12 @@
                     @php($status = $task->status())
                     <tr @class(['text-muted' => $status === App\Enums\TaskStatus::Cancelled])>
                         <td>
-                            <span class="fw-medium">{{ $task->subject }}</span>
+                            {{-- Full page loads, not swaps of the table. --}}
+                            <a href="{{ route('tasks.show', $task) }}" hx-boost="false" class="fw-medium">{{ $task->subject }}</a>
                             @if ($task->invoiced_at)
                                 <span class="badge bg-info ms-1">Billed</span>
                             @endif
                             @if ($task->project)
-                                {{-- Full page loads, not swaps of the table. --}}
                                 <div><a href="{{ route('projects.show', $task->project) }}" hx-boost="false" class="text-muted small">{{ $task->project->name }}</a></div>
                             @endif
                         </td>

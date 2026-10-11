@@ -28,6 +28,8 @@ class AttachmentController extends Controller
     {
         $owner = $this->owner($request);
 
+        abort_unless($owner->canChangeAttachments(), 403);
+
         $validator = Validator::make($request->all(), [
             'file' => [
                 'required', 'file',
@@ -107,6 +109,8 @@ class AttachmentController extends Controller
     public function destroy(Attachment $attachment): Response
     {
         $owner = $attachment->attachable;
+
+        abort_unless($owner->canChangeAttachments(), 403);
 
         $attachment->delete();
 

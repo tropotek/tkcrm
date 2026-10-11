@@ -31,6 +31,15 @@ trait HasAttachments
     }
 
     /**
+     * Whether files can be attached to it and its attachments deleted. A model that is read-only
+     * at times (a closed task) says so here: the panel then only lists, and the controller refuses.
+     */
+    public function canChangeAttachments(): bool
+    {
+        return true;
+    }
+
+    /**
      * The model's name in the morph map, which is how the upload form says what it is attaching to.
      */
     public function attachableType(): string

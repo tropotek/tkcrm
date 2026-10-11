@@ -6,6 +6,7 @@
 <x-layouts.app title="Tasks">
     <x-slot:actions>
         <a href="{{ route('task-categories.index') }}" class="btn btn-light">Categories</a>
+        <a href="{{ route('tasks.create', array_filter(['client' => $search->companyId, 'project' => $search->projectId])) }}" class="btn btn-primary"><i class="ri-add-line me-1"></i>Add task</a>
     </x-slot:actions>
 
     <div class="card">

@@ -65,7 +65,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - `resources/views/components/layouts/`: the page layouts. `<x-layouts.app title="…">` is the signed-in shell (top bar, sidebar, page title, flash messages, footer, shared dialog); `<x-layouts.guest>` is the card for the login pages.
 - `/up` (`HealthController`, `App\Support\HealthStatus`): the health check the containers poll, and the reply tkcrm's own site monitor reads from a Laravel site. 200 with `version` and `db: ok` when the database accepts a write, 503 with `db: error` otherwise.
 - `config/tkcrm.php`: tkcrm's own settings that come from the environment.
-- `resources/views/components/`: `field` (a form's text field), `company-select`, `modal` (what a dialog route returns) and `date`.
+- `resources/views/components/`: `field` (a form's text field), `company-select`, `duration` (hours and minutes), `attachments`, `modal` (what a dialog route returns) and `date`.
 - `config/navigation.php`: the sidebar menu, read by `App\Support\Navigation`.
 - `resources/fonts/`, `resources/images/`: icon fonts and images the SCSS refers to.
 - `tests/Feature`, `tests/Unit`: PHPUnit tests.
@@ -106,6 +106,9 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - `Cycle::Biannual` means every two years, as in tktask, and is labelled that way. Do not relabel it "biannual" or treat it as twice a year.
 - A status that follows from dates is never stored. A project's is `$project->status()` (`App\Enums\ProjectStatus`), with `Project::withStatus($status)` as the matching query scope; change the two together. "Today" is the signed-in user's day (`LocalTime`), not UTC's.
 - A task's status is `$task->status()` (`App\Enums\TaskStatus`: closed if it has a closed date, else cancelled if it has a cancelled date, else open), with `Task::withStatus()` as its scope. `closed_at`, `cancelled_at`, `invoiced_at` and `invoice_line_id` are not fillable: closing, cancelling and billing set them.
+- A closed or cancelled task is read-only until re-opened: `TaskController` refuses to edit it, and its attachments are locked with it. `$task->close()`, `cancel()` and `reopen()` are the only things that set its dates. A task is never deleted. `$task->canReopen()` is false once `isLockedByInvoice()`.
+- A model whose attachments are locked at times overrides `canChangeAttachments()` from `HasAttachments`; the panel and `AttachmentController` both obey it.
+- A length of time is typed into `<x-duration name="…" label="…" :minutes="…" />`, which posts `name[hours]` and `name[minutes]`; `Duration::fromParts()` makes them minutes.
 - A time log (`App\Models\TaskLog`) copies its `rate` (cents per hour) from its product when it is made, and again only if its product is changed. `$log->amount()` is the rate for its minutes, to the cent. Bill from the log's rate, never from the product's current price.
 - Durations are whole minutes in the database and shown with `App\Support\Duration::format()` ("8h 30m").
 - A date-only value (a project's start, an invoice's due date) is shown with `->format('j M Y')`, not `<x-date>`: it is a day, not a moment, and must not shift with the timezone.

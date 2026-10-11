@@ -105,6 +105,7 @@
 
     <div class="card">
         <div class="card-body">
+            <a href="{{ route('tasks.create', ['project' => $project->id]) }}" class="btn btn-sm btn-light float-end">Add task</a>
             <h4 class="header-title mb-3">Tasks</h4>
 
             <div class="table-responsive">
@@ -129,11 +130,7 @@
                             @endphp
                             <tr @class(['text-muted' => $taskStatus === App\Enums\TaskStatus::Cancelled])>
                                 <td>
-                                    @if (Route::has('tasks.show'))
-                                        <a href="{{ route('tasks.show', $task) }}" class="fw-medium">{{ $task->subject }}</a>
-                                    @else
-                                        <span class="fw-medium">{{ $task->subject }}</span>
-                                    @endif
+                                    <a href="{{ route('tasks.show', $task) }}" class="fw-medium">{{ $task->subject }}</a>
                                     @if ($task->invoiced_at)
                                         <span class="badge bg-info ms-1">Billed</span>
                                     @endif

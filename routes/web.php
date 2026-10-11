@@ -33,7 +33,11 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('projects', ProjectController::class);
 
-    Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
+    // A task is never deleted: it is cancelled.
+    Route::resource('tasks', TaskController::class)->except('destroy');
+    Route::post('/tasks/{task}/close', [TaskController::class, 'close'])->name('tasks.close');
+    Route::post('/tasks/{task}/cancel', [TaskController::class, 'cancel'])->name('tasks.cancel');
+    Route::post('/tasks/{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen');
     Route::resource('task-categories', TaskCategoryController::class)->except('show');
 
     Route::get('/products/prices', [ProductPriceController::class, 'edit'])->name('products.prices.edit');

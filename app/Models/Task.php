@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use LogicException;
 
 /**
  * A piece of work for a client, which time is logged on.
@@ -102,6 +103,53 @@ class Task extends Model
     public function isOpen(): bool
     {
         return $this->status() === TaskStatus::Open;
+    }
+
+    /**
+     * Its time is on an invoice that can no longer change, so it cannot be re-opened.
+     * Until closing a task bills it (task 36), any task with an invoice line counts.
+     */
+    public function isLockedByInvoice(): bool
+    {
+        return $this->invoice_line_id !== null;
+    }
+
+    public function canReopen(): bool
+    {
+        return ! $this->isOpen() && ! $this->isLockedByInvoice();
+    }
+
+    /**
+     * A closed or cancelled task is read-only, its attachments included.
+     */
+    public function canChangeAttachments(): bool
+    {
+        return $this->isOpen();
+    }
+
+    public function close(): void
+    {
+        $this->isOpen() || throw new LogicException('Only an open task can be closed.');
+
+        $this->closed_at = CarbonImmutable::now();
+        $this->save();
+    }
+
+    public function cancel(): void
+    {
+        $this->isOpen() || throw new LogicException('Only an open task can be cancelled.');
+
+        $this->cancelled_at = CarbonImmutable::now();
+        $this->save();
+    }
+
+    public function reopen(): void
+    {
+        $this->canReopen() || throw new LogicException('This task cannot be re-opened.');
+
+        $this->closed_at = null;
+        $this->cancelled_at = null;
+        $this->save();
     }
 
     /**

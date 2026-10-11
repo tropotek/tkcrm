@@ -1,5 +1,5 @@
 {{--
-    A company's own page: its details, then its projects. Its open tasks, invoices, recurring items and
+    A company's own page: its details, then its projects and open tasks. Its invoices, recurring items and
     domains are added below by the tasks that build those modules.
 --}}
 <x-layouts.app :title="$company->name">
@@ -116,6 +116,42 @@
                                         <td><span class="badge bg-{{ $status->colour() }}">{{ $status->label() }}</span></td>
                                         <td class="text-nowrap text-muted">{{ $project->start_on?->format('j M Y') }}{{ $project->end_on ? ' to '.$project->end_on->format('j M Y') : '' }}</td>
                                         <td class="text-end text-nowrap">{{ $project->quote->isZero() ? '' : $project->quote->format() }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    @php($openTasks = $company->tasks()->withStatus(App\Enums\TaskStatus::Open)->with('project')->orderByDesc('priority')->orderByDesc('id')->get())
+
+    @if ($openTasks->isNotEmpty() || $company->isClient())
+        <div class="card">
+            <div class="card-body">
+                <div class="float-end">
+                    <a href="{{ route('tasks.index', ['client' => $company->id, 'show' => 'all']) }}" class="btn btn-sm btn-link">All its tasks</a>
+                    <a href="{{ route('tasks.create', ['client' => $company->id]) }}" class="btn btn-sm btn-light">Add task</a>
+                </div>
+                <h4 class="header-title mb-3">Open tasks</h4>
+
+                @if ($openTasks->isEmpty())
+                    <p class="text-muted mb-0">No open tasks.</p>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-sm table-centered mb-0">
+                            <tbody>
+                                @foreach ($openTasks as $task)
+                                    <tr>
+                                        <td><a href="{{ route('tasks.show', $task) }}" class="fw-medium">{{ $task->subject }}</a></td>
+                                        <td class="text-muted">{{ $task->project?->name }}</td>
+                                        <td class="text-end">
+                                            @unless ($task->priority === App\Enums\TaskPriority::None)
+                                                <span class="badge bg-{{ $task->priority->colour() }}">{{ $task->priority->label() }}</span>
+                                            @endunless
+                                        </td>
                                     </tr>
                                 @endforeach
                             </tbody>
