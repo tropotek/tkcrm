@@ -10,6 +10,8 @@ use App\Http\Controllers\ProductPriceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\TaskCategoryController;
+use App\Http\Controllers\TaskController;
 use App\Http\Middleware\ApplySettings;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -30,6 +32,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('companies', CompanyController::class)->except('destroy');
 
     Route::resource('projects', ProjectController::class);
+
+    Route::get('/tasks', [TaskController::class, 'index'])->name('tasks.index');
+    Route::resource('task-categories', TaskCategoryController::class)->except('show');
 
     Route::get('/products/prices', [ProductPriceController::class, 'edit'])->name('products.prices.edit');
     Route::post('/products/prices/preview', [ProductPriceController::class, 'preview'])->name('products.prices.preview');

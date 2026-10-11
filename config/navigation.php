@@ -30,7 +30,7 @@ return [
     ['title' => 'Work'],
     ['label' => 'Dashboard', 'icon' => 'ri-dashboard-line', 'route' => 'dashboard'],
     ['label' => 'Review queue', 'icon' => 'ri-inbox-line', 'route' => 'review.index'],
-    ['label' => 'Tasks', 'icon' => 'ri-task-line', 'route' => 'tasks.index'],
+    ['label' => 'Tasks', 'icon' => 'ri-task-line', 'route' => 'tasks.index', 'active' => ['tasks.*', 'task-categories.*']],
     ['label' => 'Projects', 'icon' => 'ri-folder-line', 'route' => 'projects.index'],
 
     ['title' => 'Billing'],
