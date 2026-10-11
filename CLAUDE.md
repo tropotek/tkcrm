@@ -14,7 +14,7 @@ The live tktask at `https://task.ttek.org/` sends real invoices. Nothing here co
 
 - PHP 8.4, Laravel 13, Octane on FrankenPHP
 - SQLite in WAL mode
-- Vite, Bootstrap 5 with the Minton default skin (light and dark), ApexCharts for charts; htmx and Alpine come with the base layout (task 03)
+- Vite, Bootstrap 5 with the Minton default skin (light and dark), ApexCharts for charts, htmx and Alpine
 - PHPUnit for tests (not Pest), Pint for code style
 
 ## Commands
@@ -53,7 +53,9 @@ The containers load `.env` as real environment variables, so a change to `.env` 
 - `database/migrations/`: schema.
 - `Dockerfile`, `docker-compose.yml`, `docker/`: the dev image and containers. `docker/Caddyfile` is Octane's FrankenPHP site config.
 - `resources/scss/`: `app.scss` and `icons.scss` are the entries. `config/default` and `custom/` are lifted from Minton (`~/Projects/Dev/Minton/Minton/resources/scss`).
-- `resources/js/`: `app.js` is the entry. `minton/` holds the template's own scripts.
+- `resources/js/`: `app.js` is the entry. `minton/` holds the template's own scripts. `modal.js` drives the shared dialog.
+- `resources/views/components/layouts/`: the page layouts. `<x-layouts.app title="…">` is the signed-in shell (top bar, sidebar, page title, flash messages, footer, shared dialog); `<x-layouts.guest>` is the card for the login pages.
+- `config/navigation.php`: the sidebar menu, read by `App\Support\Navigation`.
 - `resources/fonts/`, `resources/images/`: icon fonts and images the SCSS refers to.
 - `tests/Feature`, `tests/Unit`: PHPUnit tests.
 - `_notes/`: local planning docs, gitignored.
@@ -70,4 +72,7 @@ The containers load `.env` as real environment variables, so a change to `.env` 
 - jQuery is imported only by the scripts in `resources/js/minton/` and is not a global. tkcrm's own front-end code does not use it.
 - Only the Minton partials tkcrm uses are in the repo. To use another, copy it from Minton and import it in `app.scss`. In a copied partial, a `url()` path is relative to that partial's own file.
 - ApexCharts is the only chart library.
+- Every planned screen is already in `config/navigation.php` under a route name (`invoices.index`, `tasks.index`, `reports.profit-loss`, …) and shows greyed in the sidebar until that route exists. A new screen uses the name listed there, or changes it there.
+- A dialog is loaded by htmx into the one shared modal: the trigger has `hx-get="…" hx-target="#app-modal-content"`, and the route returns an `<x-modal title="…" :action="…">`. A 422 reply re-renders the form in the dialog; a reply with the header `HX-Trigger: modal-close` closes it. htmx requests carry the CSRF token automatically.
+- Flash messages: `->with('success' | 'error' | 'warning' | 'info', '…')`.
 - Run Pint before committing.
