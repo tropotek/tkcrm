@@ -8,6 +8,7 @@ use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductPriceController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Middleware\ApplySettings;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
@@ -27,6 +28,8 @@ Route::middleware('auth')->group(function () {
 
     // Companies are never deleted here: a client or supplier that is done with is made inactive.
     Route::resource('companies', CompanyController::class)->except('destroy');
+
+    Route::resource('projects', ProjectController::class);
 
     Route::get('/products/prices', [ProductPriceController::class, 'edit'])->name('products.prices.edit');
     Route::post('/products/prices/preview', [ProductPriceController::class, 'preview'])->name('products.prices.preview');

@@ -107,7 +107,9 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - A status that follows from dates is never stored. A project's is `$project->status()` (`App\Enums\ProjectStatus`), with `Project::withStatus($status)` as the matching query scope; change the two together. "Today" is the signed-in user's day (`LocalTime`), not UTC's.
 - A task's status is `$task->status()` (`App\Enums\TaskStatus`: closed if it has a closed date, else cancelled if it has a cancelled date, else open), with `Task::withStatus()` as its scope. `closed_at`, `cancelled_at`, `invoiced_at` and `invoice_line_id` are not fillable: closing, cancelling and billing set them.
 - A time log (`App\Models\TaskLog`) copies its `rate` (cents per hour) from its product when it is made, and again only if its product is changed. `$log->amount()` is the rate for its minutes, to the cent. Bill from the log's rate, never from the product's current price.
-- Durations are whole minutes in the database.
+- Durations are whole minutes in the database and shown with `App\Support\Duration::format()` ("8h 30m").
+- A date-only value (a project's start, an invoice's due date) is shown with `->format('j M Y')`, not `<x-date>`: it is a day, not a moment, and must not shift with the timezone.
+- What a project's work adds up to against its quote is `App\Projects\ProjectSummary`. Billable time is always priced per log with `$log->amount()` and then summed.
 - A date-only column is cast `immutable_date` and compared in SQL with `whereDate()`, because SQLite stores it with a midnight time.
 - The seeder's companies, and every factory, use made-up names and `example.com` addresses. Keep it that way.
 - A list page follows `companies/`: a search object (`App\Companies\CompanySearch`) reads the filters and order from the query string, the controller returns the whole page or the `_table` partial alone when htmx asks for the table's id, and the filter form swaps the table as it changes.

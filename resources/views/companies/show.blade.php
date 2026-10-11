@@ -1,6 +1,6 @@
 {{--
-    A company's own page. Its open tasks, invoices, recurring items and domains are added below the
-    details by the tasks that build those modules.
+    A company's own page: its details, then its projects. Its open tasks, invoices, recurring items and
+    domains are added below by the tasks that build those modules.
 --}}
 <x-layouts.app :title="$company->name">
     <x-slot:actions>
@@ -94,4 +94,35 @@
             @endif
         </div>
     </div>
+
+    @php($projects = $company->projects()->orderByDesc('start_on')->orderByDesc('id')->get())
+
+    @if ($projects->isNotEmpty() || $company->isClient())
+        <div class="card">
+            <div class="card-body">
+                <a href="{{ route('projects.create', ['client' => $company->id]) }}" class="btn btn-sm btn-light float-end">Add project</a>
+                <h4 class="header-title mb-3">Projects</h4>
+
+                @if ($projects->isEmpty())
+                    <p class="text-muted mb-0">No projects.</p>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-sm table-centered mb-0">
+                            <tbody>
+                                @foreach ($projects as $project)
+                                    @php($status = $project->status())
+                                    <tr>
+                                        <td><a href="{{ route('projects.show', $project) }}" class="fw-medium">{{ $project->name }}</a></td>
+                                        <td><span class="badge bg-{{ $status->colour() }}">{{ $status->label() }}</span></td>
+                                        <td class="text-nowrap text-muted">{{ $project->start_on?->format('j M Y') }}{{ $project->end_on ? ' to '.$project->end_on->format('j M Y') : '' }}</td>
+                                        <td class="text-end text-nowrap">{{ $project->quote->isZero() ? '' : $project->quote->format() }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
 </x-layouts.app>
