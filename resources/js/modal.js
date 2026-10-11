@@ -35,6 +35,9 @@ if (element) {
     // Sent by a reply with the header HX-Trigger: modal-close, once a form in the dialog has saved.
     document.body.addEventListener('modal-close', () => modal.hide());
 
+    // Once open, the field marked autofocus is ready to type in.
+    element.addEventListener('shown.bs.modal', () => content.querySelector('[autofocus]')?.focus());
+
     element.addEventListener('hidden.bs.modal', () => {
         content.innerHTML = '';
     });

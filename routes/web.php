@@ -4,6 +4,7 @@ use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\ProductPriceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Middleware\ApplySettings;
@@ -25,6 +26,9 @@ Route::middleware('auth')->group(function () {
     // Companies are never deleted here: a client or supplier that is done with is made inactive.
     Route::resource('companies', CompanyController::class)->except('destroy');
 
+    Route::get('/products/prices', [ProductPriceController::class, 'edit'])->name('products.prices.edit');
+    Route::post('/products/prices/preview', [ProductPriceController::class, 'preview'])->name('products.prices.preview');
+    Route::put('/products/prices', [ProductPriceController::class, 'update'])->name('products.prices.update');
     Route::get('/products/{product}/lookup', [ProductController::class, 'lookup'])->name('products.lookup');
     Route::resource('products', ProductController::class)->except('show');
     Route::resource('product-categories', ProductCategoryController::class)->except('show');

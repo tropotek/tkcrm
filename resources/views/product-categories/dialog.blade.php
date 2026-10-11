@@ -12,7 +12,7 @@
     :method="$category->exists ? 'put' : 'post'">
     <div class="mb-3">
         <label for="category_name" class="form-label">Name</label>
-        <input type="text" id="category_name" name="name" value="{{ $posted ? $posted->input('name') : $category->name }}" required maxlength="255"
+        <input type="text" id="category_name" name="name" value="{{ $posted ? $posted->input('name') : $category->name }}" required autofocus maxlength="255"
             @class(['form-control', 'is-invalid' => $errors->has('name')])>
         @error('name')
             <div class="invalid-feedback">{{ $message }}</div>

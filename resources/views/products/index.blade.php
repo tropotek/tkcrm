@@ -5,6 +5,8 @@
 <x-layouts.app title="Products">
     <x-slot:actions>
         <a href="{{ route('product-categories.index') }}" class="btn btn-light">Categories</a>
+        {{-- Sends the fields inside the table, which are the tick boxes of the ticked rows. --}}
+        <button type="button" class="btn btn-light" hx-get="{{ route('products.prices.edit') }}" hx-include="#product-table" hx-target="#app-modal-content">Update prices</button>
         <a href="{{ route('products.create', array_filter(['category' => $search->categoryId])) }}" class="btn btn-primary"><i class="ri-add-line me-1"></i>Add product</a>
     </x-slot:actions>
 

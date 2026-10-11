@@ -23,7 +23,7 @@
     @foreach (['name' => ['Name', 'text'], 'contact_name' => ['Contact name', 'text'], 'email' => ['Email', 'email'], 'phone' => ['Phone', 'tel']] as $field => [$label, $inputType])
         <div class="mb-3">
             <label for="dialog_{{ $field }}" class="form-label">{{ $label }}</label>
-            <input type="{{ $inputType }}" id="dialog_{{ $field }}" name="{{ $field }}" value="{{ request()->input($field) }}" @required($field === 'name')
+            <input type="{{ $inputType }}" id="dialog_{{ $field }}" name="{{ $field }}" value="{{ request()->input($field) }}" @required($field === 'name') @if ($field === 'name') autofocus @endif
                 @class(['form-control', 'is-invalid' => $errors->has($field)])>
             @error($field)
                 <div class="invalid-feedback">{{ $message }}</div>

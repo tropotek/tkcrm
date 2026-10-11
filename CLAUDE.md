@@ -107,6 +107,8 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - A form request whose form can be posted from the dialog uses the `AnswersInDialog` trait. The form re-rendered in the dialog after a failed save fills its fields from the request, not from `old()`, and flashes nothing (see `CompanyRequest` and `companies/dialog.blade.php`, or `product-categories/` for a form that lives only in the dialog and refreshes its list with an event).
 - Records with history are made inactive, not deleted. A company has no delete. A product can be deleted only while `$product->isInUse()` is false: a module that points at a product (time logs, recurring items) adds its check to that method. A category can be deleted only while it has no products.
 - With GST off, no page, PDF or email mentions GST. Check `Settings::get('gst_enabled')` before showing a GST field, badge or column.
+- Product prices are changed in bulk by `ProductPriceController` (the Update prices button over the product list), which only writes `products.price`. Anything that bills must copy the price at the time, never read it back from the product later.
+- In a dialog, mark the first field `autofocus`; `modal.js` focuses it once the dialog is open. A dialog always swaps its contents, whatever swap its trigger inherits.
 - `GET /products/{id}/lookup` gives a product's code, name, description, price (a decimal string), GST-free flag and cycle as JSON, for a form that fills a line from a product.
 - Do not give an element the id `status` or `preloader`: the Minton skin styles both and hides `#status`.
 - There are no roles or permissions. Every login sees and does everything, so no screen checks an ability for who the user is.
