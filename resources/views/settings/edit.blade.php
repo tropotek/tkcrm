@@ -138,6 +138,8 @@
             </div>
         </div>
 
+        @include('settings._mail-wording')
+
         <button type="submit" class="btn btn-primary mb-4">Save</button>
     </form>
 

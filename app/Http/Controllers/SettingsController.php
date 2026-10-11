@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Enums\MailKind;
+use App\Enums\MailTemplate;
 use App\Facades\Settings;
+use App\Mail\Placeholders;
 use App\Mail\TestMessage;
 use App\Models\MailLog;
 use App\Models\Product;
@@ -55,7 +57,15 @@ class SettingsController extends Controller
             }
         }
 
-        $validated = $request->validate(array_map(fn (array $definition) => $definition['rules'], $definitions));
+        // How a message's fields are named in what is said about them.
+        $names = [MailTemplate::SIGNATURE_KEY => 'signature'];
+
+        foreach (MailTemplate::cases() as $template) {
+            $names[$template->subjectKey()] = strtolower($template->label()).' email\'s subject';
+            $names[$template->bodyKey()] = strtolower($template->label()).' email\'s body';
+        }
+
+        $validated = $request->validate(array_map(fn (array $definition) => $definition['rules'], $definitions), [], $names);
 
         foreach ($validated as $key => $value) {
             match ($definitions[$key]['type']) {
@@ -65,6 +75,30 @@ class SettingsController extends Controller
         }
 
         return redirect()->route('settings.edit')->with('success', 'Settings saved.');
+    }
+
+    /**
+     * One message as a client would get it, filled with made-up values, in the shared dialog. It is
+     * worded as the form has it now, saved or not, with the default for a field left empty.
+     */
+    public function mailPreview(Request $request, MailTemplate $template): View
+    {
+        $typed = fn (string $key, string $default): string => trim((string) $request->input($key)) ?: $default;
+
+        $wording = [
+            'subject' => $typed($template->subjectKey(), $template->defaultSubject()),
+            'body' => $typed($template->bodyKey(), $template->defaultBody()),
+            'signature' => $typed(MailTemplate::SIGNATURE_KEY, MailTemplate::DEFAULT_SIGNATURE),
+        ];
+
+        return view('settings.mail-preview', [
+            'template' => $template,
+            'filled' => $template->fill($template->sampleValues(), wording: $wording),
+            'unknown' => array_values(array_unique([
+                ...Placeholders::unknown($wording['subject'].$wording['body'], array_keys($template->placeholders())),
+                ...Placeholders::unknown($wording['signature'], array_keys(MailTemplate::signaturePlaceholders())),
+            ])),
+        ]);
     }
 
     /**

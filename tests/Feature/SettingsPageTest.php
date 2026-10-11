@@ -101,7 +101,7 @@ class SettingsPageTest extends TestCase
             'gst_enabled' => true,
             'gst_rate' => 1000,
             'bcc_owner' => false,
-        ], Settings::all());
+        ], array_filter(Settings::all(), fn (string $key) => ! str_starts_with($key, 'mail_'), ARRAY_FILTER_USE_KEY));
     }
 
     public function test_the_page_shows_what_was_saved(): void

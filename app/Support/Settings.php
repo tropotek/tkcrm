@@ -2,7 +2,9 @@
 
 namespace App\Support;
 
+use App\Enums\MailTemplate;
 use App\Invoices\InvoiceNumber;
+use App\Rules\KnownPlaceholders;
 use Closure;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -27,14 +29,30 @@ class Settings
      *   bool          on or off
      *   rate          a percentage held in basis points (1000 is 10%), edited as a percentage
      *   id            the id of another record, or null for none
+     *   wording       a message's subject, body or signature: text whose default is never stored, so
+     *                 saving it blank or unchanged leaves the default in the code in force
      *
      * The rules validate what the settings page posts, so a rate's rules are for the percentage.
      *
-     * @return array<string, array{default: mixed, type: 'string'|'text'|'int'|'bool'|'rate'|'id', rules: array<int, mixed>}>
+     * @return array<string, array{default: mixed, type: 'string'|'text'|'int'|'bool'|'rate'|'id'|'wording', rules: array<int, mixed>}>
      */
     public function definitions(): array
     {
         $percentage = ['required', 'numeric', 'decimal:0,2', 'between:0,100'];
+
+        $wording = fn (string $default, int $max, array $placeholders) => [
+            'default' => $default,
+            'type' => 'wording',
+            'rules' => ['sometimes', 'nullable', 'string', "max:{$max}", new KnownPlaceholders(array_keys($placeholders))],
+        ];
+
+        $mail = [MailTemplate::SIGNATURE_KEY => $wording(MailTemplate::DEFAULT_SIGNATURE, 1000, MailTemplate::signaturePlaceholders())];
+
+        // The wording of each message to a client. Read it through App\Enums\MailTemplate.
+        foreach (MailTemplate::cases() as $template) {
+            $mail[$template->subjectKey()] = $wording($template->defaultSubject(), 200, $template->placeholders());
+            $mail[$template->bodyKey()] = $wording($template->defaultBody(), 5000, $template->placeholders());
+        }
 
         return [
             'site_name' => [
@@ -106,6 +124,7 @@ class Settings
                 'type' => 'bool',
                 'rules' => ['boolean'],
             ],
+            ...$mail,
         ];
     }
 
@@ -145,12 +164,23 @@ class Settings
      */
     public function set(string $key, mixed $value): void
     {
-        $value = match ($this->definition($key)['type']) {
+        $definition = $this->definition($key);
+
+        $value = match ($definition['type']) {
             'int', 'rate' => (int) $value,
             'bool' => (bool) $value,
             'id' => $value === null || $value === '' ? null : (int) $value,
+            // A browser posts a textarea's line ends as CRLF.
+            'wording' => trim(str_replace(["\r\n", "\r"], "\n", (string) $value)),
             default => (string) $value,
         };
+
+        if ($definition['type'] === 'wording' && in_array($value, ['', $definition['default']], true)) {
+            DB::table('settings')->where('key', $key)->delete();
+            $this->stored = null;
+
+            return;
+        }
 
         DB::table('settings')->updateOrInsert(
             ['key' => $key],

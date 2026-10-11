@@ -83,6 +83,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
     Route::post('/settings/test-mail', [SettingsController::class, 'testMail'])->name('settings.test-mail');
+    Route::post('/settings/mail-preview/{template}', [SettingsController::class, 'mailPreview'])->name('settings.mail-preview');
 });
 
 // The container health check. No session, cookies or settings: it must answer before the first migration.

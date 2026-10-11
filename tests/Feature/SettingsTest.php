@@ -27,7 +27,7 @@ class SettingsTest extends TestCase
             'gst_enabled' => false,
             'gst_rate' => 1000,
             'bcc_owner' => true,
-        ], Settings::all());
+        ], array_filter(Settings::all(), fn (string $key) => ! str_starts_with($key, 'mail_'), ARRAY_FILTER_USE_KEY));
     }
 
     public function test_a_stored_value_replaces_the_default_and_keeps_its_type(): void
