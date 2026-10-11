@@ -36,8 +36,8 @@ Route::middleware('auth')->group(function () {
 
     Route::resource('projects', ProjectController::class);
 
-    // There is no list yet (task 45). POST finds or starts a client's open invoice.
-    Route::resource('invoices', InvoiceController::class)->except('index', 'create');
+    // POST finds or starts a client's open invoice.
+    Route::resource('invoices', InvoiceController::class)->except('create');
     Route::resource('invoices.lines', InvoiceLineController::class)->shallow()->except('index', 'show');
 
     // A task is never deleted: it is cancelled.

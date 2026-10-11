@@ -5,9 +5,11 @@ namespace App\Models;
 use App\Casts\MoneyCast;
 use App\Enums\InvoiceStatus;
 use App\Invoices\InvoiceTotals;
+use App\Support\LocalTime;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Database\Factories\InvoiceFactory;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -130,6 +132,27 @@ class Invoice extends Model
     }
 
     /**
+     * Unpaid and past its due date. Today is the day where whoever is signed in is, when no day
+     * is given; the due date itself is not yet overdue.
+     */
+    public function isOverdue(?DateTimeInterface $on = null): bool
+    {
+        return $this->status() === InvoiceStatus::Unpaid
+            && $this->due_on !== null
+            && $this->due_on->toDateString() < self::day($on);
+    }
+
+    /**
+     * Only the overdue invoices, by the same rule as isOverdue().
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeOverdue(Builder $query, ?DateTimeInterface $on = null): void
+    {
+        $query->withStatus(InvoiceStatus::Unpaid)->whereDate('due_on', '<', self::day($on));
+    }
+
+    /**
      * Only the invoices not yet issued.
      *
      * @param  Builder<self>  $query
@@ -149,5 +172,10 @@ class Invoice extends Model
         return $this->total !== null
             ? new InvoiceTotals($this->subtotal, $this->discount_total, $this->gst_total, $this->total, $this->gst_rate ?? 0)
             : InvoiceTotals::of($this);
+    }
+
+    private static function day(?DateTimeInterface $on): string
+    {
+        return $on ? CarbonImmutable::instance($on)->toDateString() : LocalTime::of(now())->toDateString();
     }
 }

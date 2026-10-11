@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\InvoiceStatus;
 use App\Http\Requests\InvoiceRequest;
+use App\Invoices\InvoiceSearch;
 use App\Models\Company;
 use App\Models\Invoice;
 use Illuminate\Http\RedirectResponse;
@@ -12,11 +13,30 @@ use Illuminate\Http\Response;
 use Illuminate\View\View;
 
 /**
- * An invoice's own page. While it is open its details and lines can change, each in the shared
+ * The invoice list, and an invoice's own page. While it is open its details and lines can change, each in the shared
  * dialog; once it is issued the page only shows it.
  */
 class InvoiceController extends Controller
 {
+    /**
+     * The whole page, or the table alone when htmx asks for #invoice-table
+     * (a filter, a search, a sort or a page).
+     */
+    public function index(Request $request): View
+    {
+        $search = InvoiceSearch::fromInput($request->query());
+        $view = $request->header('HX-Target') === 'invoice-table' ? 'invoices._table' : 'invoices.index';
+
+        return view($view, [
+            'search' => $search,
+            'invoices' => $search->query()->paginate(25)->appends($search->toQuery()),
+            'totals' => $search->totals(),
+            // Only companies that have an invoice are worth filtering by.
+            'clients' => Company::whereHas('invoices')->orderByRaw('name COLLATE NOCASE')->get(['id', 'name']),
+            'statuses' => InvoiceStatus::cases(),
+        ]);
+    }
+
     /**
      * Go to a client's open invoice (`company_id`), starting one if it has none.
      */

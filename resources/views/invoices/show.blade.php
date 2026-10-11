@@ -91,7 +91,7 @@
                                     @foreach ($unpaid as $other)
                                         <tr>
                                             <td><a href="{{ route('invoices.show', $other) }}" class="fw-medium">Invoice {{ $other->number }}</a></td>
-                                            <td @class(['text-nowrap', 'text-danger' => $other->due_on?->isPast()])>{{ $other->due_on ? 'Due '.$other->due_on->format('j M Y') : '' }}</td>
+                                            <td @class(['text-nowrap', 'text-danger' => $other->isOverdue()])>{{ $other->due_on ? 'Due '.$other->due_on->format('j M Y') : '' }}</td>
                                             <td class="text-end text-nowrap">{{ $other->totals()->total->format() }}</td>
                                         </tr>
                                     @endforeach

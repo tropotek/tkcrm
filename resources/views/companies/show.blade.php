@@ -10,6 +10,7 @@
                 <input type="hidden" name="company_id" value="{{ $company->id }}">
                 <button type="submit" class="btn btn-light" title="Its open invoice, started now if it has none"><i class="ri-bill-line me-1"></i>Open invoice</button>
             </form>
+            <a href="{{ route('invoices.index', ['client' => $company->id, 'show' => 'all']) }}" class="btn btn-light">Invoices</a>
         @endif
         <a href="{{ route('companies.edit', $company) }}" class="btn btn-primary"><i class="ri-pencil-line me-1"></i>Edit</a>
     </x-slot:actions>
