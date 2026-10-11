@@ -64,6 +64,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - `resources/views/components/layouts/`: the page layouts. `<x-layouts.app title="…">` is the signed-in shell (top bar, sidebar, page title, flash messages, footer, shared dialog); `<x-layouts.guest>` is the card for the login pages.
 - `/up` (`HealthController`, `App\Support\HealthStatus`): the health check the containers poll, and the reply tkcrm's own site monitor reads from a Laravel site. 200 with `version` and `db: ok` when the database accepts a write, 503 with `db: error` otherwise.
 - `config/tkcrm.php`: tkcrm's own settings that come from the environment.
+- `resources/views/components/`: `field` (a form's text field), `company-select`, `modal` (what a dialog route returns) and `date`.
 - `config/navigation.php`: the sidebar menu, read by `App\Support\Navigation`.
 - `resources/fonts/`, `resources/images/`: icon fonts and images the SCSS refers to.
 - `tests/Feature`, `tests/Unit`: PHPUnit tests.
@@ -98,6 +99,11 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - The site name comes from the `site_name` setting, copied into `config('app.name')` for each web request by `ApplySettings`. Code outside a web request (a queued job, a command) reads `Settings::get('site_name')`.
 - A company (`App\Models\Company`) is a client or a supplier (`App\Enums\CompanyType`). `$company->account_number` is `CO-` and the id padded to ten digits, so an imported company must keep its tktask id. There is no client credit.
 - The seeder's companies, and every factory, use made-up names and `example.com` addresses. Keep it that way.
+- A list page follows `companies/`: a search object (`App\Companies\CompanySearch`) reads the filters and order from the query string, the controller returns the whole page or the `_table` partial alone when htmx asks for the table's id, and the filter form swaps the table as it changes.
+- A form's text fields use `<x-field name="…" label="…" :value="…" />`. A company is chosen in another form with `<x-company-select>`, whose New button adds one in the shared dialog; the save answers with a `company-added` event carrying its id, name and type.
+- A form re-rendered in the dialog after a failed save fills its fields from the request, not from `old()`, and flashes nothing (see `CompanyRequest::failedValidation` and `companies/dialog.blade.php`).
+- Records with history (companies, and later products and the rest) are made inactive, not deleted.
+- Do not give an element the id `status` or `preloader`: the Minton skin styles both and hides `#status`.
 - There are no roles or permissions. Every login sees and does everything, so no screen checks an ability for who the user is.
 - Until the app is live, a schema change edits the table's own migration rather than adding a second one; rebuild with `composer fresh`.
 - Run Pint before committing.
