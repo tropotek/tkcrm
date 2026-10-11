@@ -71,6 +71,14 @@ class InvoiceLine extends Model
     }
 
     /**
+     * The quantity times the unit price, rounded half up to the cent, before any discount or GST.
+     */
+    public function total(): Money
+    {
+        return $this->unit_price->multiply($this->quantity);
+    }
+
+    /**
      * @return BelongsTo<Invoice, $this>
      */
     public function invoice(): BelongsTo

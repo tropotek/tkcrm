@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use App\Casts\MoneyCast;
+use App\Enums\InvoiceStatus;
+use App\Invoices\InvoiceTotals;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Database\Factories\InvoiceFactory;
@@ -89,20 +91,60 @@ class Invoice extends Model
     }
 
     /**
+     * Cancelled if it has a cancelled date, otherwise paid if it has a paid date, otherwise unpaid
+     * once issued, otherwise open.
+     */
+    public function status(): InvoiceStatus
+    {
+        return match (true) {
+            $this->cancelled_on !== null => InvoiceStatus::Cancelled,
+            $this->paid_on !== null => InvoiceStatus::Paid,
+            $this->issued_on !== null => InvoiceStatus::Unpaid,
+            default => InvoiceStatus::Open,
+        };
+    }
+
+    /**
      * Not yet issued, so its lines can still change.
      */
     public function isOpen(): bool
     {
-        return $this->issued_on === null && $this->cancelled_on === null;
+        return $this->status() === InvoiceStatus::Open;
     }
 
     /**
-     * Only the invoices not yet issued, by the same rule as isOpen().
+     * Only the invoices with a status, by the same rules as status().
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeWithStatus(Builder $query, InvoiceStatus $status): void
+    {
+        match ($status) {
+            InvoiceStatus::Cancelled => $query->whereNotNull('cancelled_on'),
+            InvoiceStatus::Paid => $query->whereNull('cancelled_on')->whereNotNull('paid_on'),
+            InvoiceStatus::Unpaid => $query->whereNull('cancelled_on')->whereNull('paid_on')->whereNotNull('issued_on'),
+            InvoiceStatus::Open => $query->whereNull('cancelled_on')->whereNull('paid_on')->whereNull('issued_on'),
+        };
+    }
+
+    /**
+     * Only the invoices not yet issued.
      *
      * @param  Builder<self>  $query
      */
     public function scopeOpen(Builder $query): void
     {
-        $query->whereNull('issued_on')->whereNull('cancelled_on');
+        $query->withStatus(InvoiceStatus::Open);
+    }
+
+    /**
+     * Its sub-total, discount, GST and total. Once issued these are the stored figures, whatever
+     * has happened to its lines or to prices since; until then they are worked out from its lines.
+     */
+    public function totals(): InvoiceTotals
+    {
+        return $this->total !== null
+            ? new InvoiceTotals($this->subtotal, $this->discount_total, $this->gst_total, $this->total)
+            : InvoiceTotals::of($this);
     }
 }
