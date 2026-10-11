@@ -8,9 +8,20 @@ Status: in development.
 
 ## Development
 
-Requires PHP 8.4 with `pdo_sqlite` and `bcmath`, Composer and Node.
+Requires Docker. PHP 8.4, Composer and Node are in the dev image.
 
 ```bash
-composer setup    # install, create .env, generate key, create and migrate data/tkcrm.sqlite, build assets
-composer test     # run the test suite
+cp .env.example .env
+docker compose up -d                                  # builds the image, installs PHP and Node packages
+docker compose exec app php artisan key:generate
+docker compose exec app php artisan migrate
+docker compose exec app composer test                 # run the test suite
 ```
+
+- App: http://localhost:8780
+- Vite dev server: http://localhost:5780
+- Mailpit (all outgoing mail): http://localhost:8781
+
+The ports are set in `.env`.
+
+The queue and the scheduler run in a `worker` container that is off by default, so a dev site never bills, mails or pings on a timer. Start it with `docker compose --profile worker up -d`.

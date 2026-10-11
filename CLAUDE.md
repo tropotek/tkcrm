@@ -12,29 +12,46 @@ The live tktask at `https://task.ttek.org/` sends real invoices. Nothing here co
 
 ## Stack
 
-- PHP 8.4, Laravel 13, Octane on FrankenPHP (task 01)
+- PHP 8.4, Laravel 13, Octane on FrankenPHP
 - SQLite in WAL mode
 - Vite, Bootstrap 5 with the Minton template, htmx and Alpine (tasks 02 and 03)
 - PHPUnit for tests (not Pest), Pint for code style
 
 ## Commands
 
-There is no PHP with SQLite or Composer on the host. Until task 01 adds this repo's own Docker setup, run PHP through the Nugget dev image:
+There is no PHP with SQLite or Composer on the host. Everything runs in the dev containers (`docker-compose.yml`):
 
 ```bash
-docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app nugget-dev:latest composer install
-docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app nugget-dev:latest php artisan migrate
-docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app nugget-dev:latest php artisan test
-docker run --rm -u "$(id -u):$(id -g)" -e HOME=/tmp -v "$PWD":/app -w /app nugget-dev:latest vendor/bin/pint
+docker compose up -d                              # app, vite, mailpit
+docker compose --profile worker up -d             # the queue and scheduler too: only when working on mail, billing or pings
+docker compose exec app composer install
+docker compose exec app php artisan migrate
+docker compose exec app composer test
+docker compose exec app vendor/bin/pint
+docker compose build app                          # after changing the Dockerfile
 ```
 
-`composer setup` installs, creates `.env`, generates the key, creates and migrates `data/tkcrm.sqlite`, and builds the assets. `composer test` clears the config cache and runs the suite. Tests run against an in-memory SQLite database.
+| Service | Where | What |
+|---|---|---|
+| `app` | http://localhost:8780 | Octane on FrankenPHP with `--watch`, so PHP changes reload on save |
+| `vite` | http://localhost:5780 | Vite dev server, hot reload |
+| `worker` | — | `queue:listen` and `schedule:work` in one container. Opt-in (`--profile worker`), so dev never bills, mails or pings by itself |
+| `mailpit` | http://localhost:8781 | catches all outgoing mail |
+
+The ports come from `APP_PORT`, `VITE_PORT` and `MAILPIT_PORT` in `.env`. Wicket's dev stack uses 8777 and 5777, Nugget's 8778, 5778 and 8779.
+
+Without the worker, queued jobs (all client mail from task 50 on) wait in the `jobs` table. Start the worker, or run `docker compose exec app php artisan queue:work --once`, to send them to Mailpit.
+
+The containers load `.env` as real environment variables, so a change to `.env` needs `docker compose up -d` to recreate them, and `phpunit.xml` forces its test settings with `<server force="true">`.
+
+`composer test` clears the config cache and runs the suite. Tests run against an in-memory SQLite database.
 
 ## Layout
 
 - `app/`: application code, `App\` namespace.
 - `data/`: runtime data, gitignored. The SQLite database is `data/tkcrm.sqlite` (WAL mode). In production this directory is the mounted volume.
 - `database/migrations/`: schema.
+- `Dockerfile`, `docker-compose.yml`, `docker/`: the dev image and containers. `docker/Caddyfile` is Octane's FrankenPHP site config.
 - `tests/Feature`, `tests/Unit`: PHPUnit tests.
 - `_notes/`: local planning docs, gitignored.
 - `version.md`: the app version.
