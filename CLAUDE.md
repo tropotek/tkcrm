@@ -25,7 +25,10 @@ There is no PHP with SQLite or Composer on the host. Everything runs in the dev 
 docker compose up -d                              # app, vite, mailpit
 docker compose --profile worker up -d             # the queue and scheduler too: only when working on mail, billing or pings
 docker compose exec app composer install
-docker compose exec app php artisan migrate
+docker compose exec app php artisan migrate                # apply new migrations; keeps the data
+docker compose exec app php artisan db:seed                # add any missing development data (local only)
+docker compose exec app composer fresh                     # roll every migration back, migrate and seed
+docker compose exec app php artisan tkcrm:create-user you@example.com   # create a login (--name, --password, --timezone)
 docker compose exec app composer test
 docker compose exec app vendor/bin/pint
 docker compose build app                          # after changing the Dockerfile
@@ -43,6 +46,10 @@ The ports come from `APP_PORT`, `VITE_PORT` and `MAILPIT_PORT` in `.env`. Wicket
 Without the worker, queued jobs (all client mail from task 50 on) wait in the `jobs` table. Start the worker, or run `docker compose exec app php artisan queue:work --once`, to send them to Mailpit.
 
 The containers load `.env` as real environment variables, so a change to `.env` needs `docker compose up -d` to recreate them, and `phpunit.xml` forces its test settings with `<server force="true">`.
+
+Do not run `php artisan migrate:fresh` or `db:wipe` while the app container is up. On SQLite they empty the database file, and Octane still has it open in WAL mode, so every later query fails with "database is locked". `composer fresh` uses `migrate:refresh` for that reason. If it happens, `docker compose restart app` and migrate again.
+
+The seeder makes one dev login, `owner@example.com` with the password `password`.
 
 `composer test` clears the config cache and runs the suite. Tests run against an in-memory SQLite database.
 
@@ -76,4 +83,6 @@ The containers load `.env` as real environment variables, so a change to `.env` 
 - Every planned screen is already in `config/navigation.php` under a route name (`invoices.index`, `tasks.index`, `reports.profit-loss`, …) and shows greyed in the sidebar until that route exists. A new screen uses the name listed there, or changes it there.
 - A dialog is loaded by htmx into the one shared modal: the trigger has `hx-get="…" hx-target="#app-modal-content"`, and the route returns an `<x-modal title="…" :action="…">`. A 422 reply re-renders the form in the dialog; a reply with the header `HX-Trigger: modal-close` closes it. htmx requests carry the CSRF token automatically.
 - Flash messages: `->with('success' | 'error' | 'warning' | 'info', '…')`.
+- There are no roles or permissions. Every login sees and does everything, so no screen checks an ability for who the user is.
+- Until the app is live, a schema change edits the table's own migration rather than adding a second one; rebuild with `composer fresh`.
 - Run Pint before committing.

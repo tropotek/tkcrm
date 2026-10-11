@@ -15,8 +15,11 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
-            $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            // User::DEFAULT_TIMEZONE.
+            $table->string('timezone', 64)->default('Australia/Melbourne');
+            // Path of the profile photo on the public disk.
+            $table->string('photo')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
