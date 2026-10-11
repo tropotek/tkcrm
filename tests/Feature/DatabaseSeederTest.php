@@ -3,7 +3,10 @@
 namespace Tests\Feature;
 
 use App\Enums\CompanyType;
+use App\Enums\Cycle;
 use App\Models\Company;
+use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -60,6 +63,35 @@ class DatabaseSeederTest extends TestCase
         $this->assertSame('03 5550 0000', Company::where('name', 'Ironbark Surveying')->sole()->phone);
     }
 
+    public function test_it_makes_products_of_every_kind_in_three_categories(): void
+    {
+        $this->runSeeder();
+
+        $this->assertSame(['Domains', 'Hosting', 'Labour'], ProductCategory::orderBy('name')->pluck('name')->all());
+        $this->assertSame(7, Product::count());
+
+        $labour = Product::where('code', 'LAB')->sole();
+        $this->assertSame('Labour', $labour->category->name);
+        $this->assertSame('$90.00', $labour->price->format());
+        $this->assertSame(Cycle::Each, $labour->cycle);
+
+        $this->assertSame(Cycle::Biannual, Product::where('code', 'DOM-AU')->sole()->cycle);
+        $this->assertSame(['DOM-COM'], Product::where('gst_free', true)->pluck('code')->all());
+        $this->assertSame(['HOST-OLD'], Product::where('active', false)->pluck('code')->all());
+    }
+
+    public function test_seeding_again_adds_no_products_and_leaves_their_prices(): void
+    {
+        $this->runSeeder();
+        Product::where('code', 'LAB')->sole()->update(['price' => 9900]);
+
+        $this->runSeeder();
+
+        $this->assertSame(7, Product::count());
+        $this->assertSame(3, ProductCategory::count());
+        $this->assertSame(9900, Product::where('code', 'LAB')->sole()->price->inCents());
+    }
+
     public function test_it_seeds_nothing_in_production(): void
     {
         $this->app['env'] = 'production';
@@ -68,5 +100,6 @@ class DatabaseSeederTest extends TestCase
 
         $this->assertSame(0, User::count());
         $this->assertSame(0, Company::count());
+        $this->assertSame(0, Product::count());
     }
 }

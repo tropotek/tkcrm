@@ -3,15 +3,18 @@
 namespace Database\Seeders;
 
 use App\Enums\CompanyType;
+use App\Enums\Cycle;
 use App\Models\Company;
+use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
     /**
-     * Seed a dev database: one login, owner@example.com with the password "password", and a few made-up
-     * clients and suppliers.
+     * Seed a dev database: one login, owner@example.com with the password "password", a few made-up
+     * clients and suppliers, and some products.
      *
      * Safe to run again: what is already there is left as it is. Does nothing in production.
      */
@@ -26,6 +29,7 @@ class DatabaseSeeder extends Seeder
         }
 
         $this->companies();
+        $this->products();
     }
 
     /**
@@ -45,6 +49,38 @@ class DatabaseSeeder extends Seeder
         foreach ($companies as $company) {
             if (! Company::where('name', $company['name'])->exists()) {
                 Company::factory()->create($company);
+            }
+        }
+    }
+
+    /**
+     * Products in three categories, found again by code. Prices are in cents.
+     */
+    private function products(): void
+    {
+        $categories = [
+            'Labour' => [
+                ['code' => 'LAB', 'name' => 'Labour', 'price' => 9000, 'description' => 'Development and support, per hour'],
+                ['code' => 'LAB-AH', 'name' => 'After-hours labour', 'price' => 13500, 'description' => 'Work outside business hours, per hour'],
+            ],
+            'Hosting' => [
+                ['code' => 'HOST-STD', 'name' => 'Web hosting', 'price' => 33000, 'cycle' => Cycle::Year],
+                ['code' => 'HOST-MAIL', 'name' => 'Email hosting', 'price' => 1500, 'cycle' => Cycle::Month],
+                ['code' => 'HOST-OLD', 'name' => 'Legacy hosting', 'price' => 20000, 'cycle' => Cycle::Year, 'active' => false],
+            ],
+            'Domains' => [
+                ['code' => 'DOM-AU', 'name' => '.com.au domain', 'price' => 4500, 'cycle' => Cycle::Biannual],
+                ['code' => 'DOM-COM', 'name' => '.com domain', 'price' => 2500, 'cycle' => Cycle::Year, 'gst_free' => true],
+            ],
+        ];
+
+        foreach ($categories as $name => $products) {
+            $category = ProductCategory::firstOrCreate(['name' => $name]);
+
+            foreach ($products as $product) {
+                if (! Product::where('code', $product['code'])->exists()) {
+                    Product::factory()->for($category, 'category')->create($product);
+                }
             }
         }
     }
