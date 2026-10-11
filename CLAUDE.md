@@ -63,6 +63,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - `resources/js/`: `app.js` is the entry. `minton/` holds the template's own scripts. `modal.js` drives the shared dialog.
 - `resources/views/components/layouts/`: the page layouts. `<x-layouts.app title="…">` is the signed-in shell (top bar, sidebar, page title, flash messages, footer, shared dialog); `<x-layouts.guest>` is the card for the login pages.
 - `/up` (`HealthController`, `App\Support\HealthStatus`): the health check the containers poll, and the reply tkcrm's own site monitor reads from a Laravel site. 200 with `version` and `db: ok` when the database accepts a write, 503 with `db: error` otherwise.
+- `config/tkcrm.php`: tkcrm's own settings that come from the environment.
 - `config/navigation.php`: the sidebar menu, read by `App\Support\Navigation`.
 - `resources/fonts/`, `resources/images/`: icon fonts and images the SCSS refers to.
 - `tests/Feature`, `tests/Unit`: PHPUnit tests.
@@ -85,6 +86,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - Flash messages: `->with('success' | 'error' | 'warning' | 'info', '…')`.
 - Every page needs a signed-in user: put its route inside the `auth` group in `routes/web.php`. The login and password reset routes are in `routes/auth.php`. There is no registration. `RoutesNeedLoginTest` lists the only routes open to a guest and fails when another appears.
 - Private files are never served by a signed URL (`serve` is off on the `local` disk): a controller behind the login sends them.
+- Login and password recovery are throttled per email and IP address together, with the limits in `config/tkcrm.php`. Recovery and reset answer the same whether or not the email has an account; keep it that way when changing them.
 - Emails are stored in lower case and SQLite compares them exactly, so lower-case an email before looking a user up by it.
 - `laravel/breeze` is a dev dependency used only as a source of stubs to copy from `vendor/laravel/breeze/stubs/default`. Never run `breeze:install`: it would replace the layout and the Vite setup with Tailwind.
 - There are no roles or permissions. Every login sees and does everything, so no screen checks an ability for who the user is.
