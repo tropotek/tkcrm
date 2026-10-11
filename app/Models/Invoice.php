@@ -309,6 +309,20 @@ class Invoice extends Model
     }
 
     /**
+     * Why it cannot be emailed to the client, or null when it can: it must be issued and unpaid,
+     * and the client must have an email address.
+     */
+    public function emailProblem(): ?string
+    {
+        return match (true) {
+            $this->isOpen() => 'Issue this invoice before emailing it.',
+            $this->status() !== InvoiceStatus::Unpaid => 'Only an unpaid invoice is emailed to the client.',
+            blank($this->company->email) => "{$this->company->name} has no email address, so there is nowhere to send this invoice.",
+            default => null,
+        };
+    }
+
+    /**
      * The tasks whose time is billed on this invoice.
      *
      * @return Builder<Task>

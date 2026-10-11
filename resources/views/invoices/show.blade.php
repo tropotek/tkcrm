@@ -37,6 +37,7 @@
                 </form>
             @endif
         @elseif ($status === App\Enums\InvoiceStatus::Unpaid)
+            <button type="button" class="btn btn-light" hx-get="{{ route('invoices.email.create', $invoice) }}" hx-target="#app-modal-content" title="Preview the email to the client, then send it"><i class="ri-mail-send-line me-1"></i>Email</button>
             <button type="button" class="btn btn-primary" hx-get="{{ route('invoices.payments.create', $invoice) }}" hx-target="#app-modal-content"><i class="ri-money-dollar-circle-line me-1"></i>Record payment</button>
         @endif
         @if ($status === App\Enums\InvoiceStatus::Unpaid && $invoice->payments->isEmpty())

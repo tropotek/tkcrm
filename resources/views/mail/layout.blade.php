@@ -2,20 +2,22 @@
     The one HTML layout of every email to a client (App\Mail\FilledTemplate). It stands alone, with
     its styles inline and nothing fetched, because a mail reader drops the rest.
 
-    $subject: the message's subject, as its title.
-    $note, $body, $signature: lists of paragraphs of plain text. The note is the owner's own, set apart above the body.
+    $filled: the App\Mail\FilledTemplate. Its note, body, notices and signature are plain text, set here as
+    paragraphs. The note is the owner's own, set apart above the body. A notice is fixed by the message, not the
+    owner's wording, and follows the body.
     $owner: App\Support\Owner, the business it is from.
 --}}
 @php
     $paragraph = 'margin: 0 0 14px;';
     $contact = array_filter([$owner->phone(), $owner->email(), $owner->website()]);
+    ['note' => $note, 'body' => $body, 'notices' => $notices, 'signature' => $signature] = $filled->paragraphs();
 @endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $subject }}</title>
+    <title>{{ $filled->subject }}</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f3f4f6;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6;">
@@ -37,6 +39,10 @@
 
                             @foreach ($body as $text)
                                 <p style="{{ $paragraph }}">{!! nl2br(e($text)) !!}</p>
+                            @endforeach
+
+                            @foreach ($notices as $text)
+                                <p style="{{ $paragraph }} color: #444444;">{!! nl2br(e($text)) !!}</p>
                             @endforeach
 
                             @foreach ($signature as $text)

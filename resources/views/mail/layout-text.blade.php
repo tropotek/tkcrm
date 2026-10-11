@@ -1,1 +1,1 @@
-{!! implode("\n\n", [...$note, ...$body, ...$signature]) !!}{{-- The plain text part of mail/layout.blade.php: the same paragraphs with a blank line between each, and nothing escaped. --}}
+{!! implode("\n\n", array_merge(...array_values($filled->paragraphs()))) !!}{{-- The plain text part of mail/layout.blade.php: the same paragraphs with a blank line between each, and nothing escaped. --}}

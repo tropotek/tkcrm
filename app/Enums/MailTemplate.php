@@ -22,7 +22,7 @@ use InvalidArgumentException;
  *
  *     $filled = MailTemplate::Invoice->fill(MailTemplate::clientValues($company) + [
  *         'invoice_number' => (string) $invoice->number, …
- *     ], note: $note);
+ *     ], note: $note, notices: […]);
  *
  *     new Envelope(to: …, subject: $filled->subject);   $filled->content();
  *
@@ -213,8 +213,9 @@ enum MailTemplate: string
      * @param  array<string, string>  $values
      * @param  ?string  $note  a personal note from the owner, shown above the body
      * @param  array{subject?: string, body?: string, signature?: string}  $wording
+     * @param  list<string>  $notices  what the client must be told whatever the wording says, after the body
      */
-    public function fill(array $values, ?string $note = null, array $wording = []): FilledTemplate
+    public function fill(array $values, ?string $note = null, array $wording = [], array $notices = []): FilledTemplate
     {
         $values += self::ownerValues() + ['payment_instructions' => (string) Settings::get('payment_instructions')];
 
@@ -227,6 +228,7 @@ enum MailTemplate: string
             Placeholders::fill($wording['body'] ?? $this->body(), $values),
             Placeholders::fill($wording['signature'] ?? Settings::get(self::SIGNATURE_KEY), $values),
             $note,
+            $notices,
         );
     }
 

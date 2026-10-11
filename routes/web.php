@@ -4,6 +4,7 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\InvoiceEmailController;
 use App\Http\Controllers\InvoiceLineController;
 use App\Http\Controllers\MailLogController;
 use App\Http\Controllers\NotificationController;
@@ -47,6 +48,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/invoices/{invoice}/reopen', [InvoiceController::class, 'reopen'])->name('invoices.reopen');
     Route::get('/invoices/{invoice}/cancel', [InvoiceController::class, 'confirmCancel'])->name('invoices.cancel.confirm');
     Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');
+    Route::get('/invoices/{invoice}/email', [InvoiceEmailController::class, 'create'])->name('invoices.email.create');
+    Route::post('/invoices/{invoice}/email', [InvoiceEmailController::class, 'store'])->name('invoices.email.store');
     Route::resource('invoices.payments', PaymentController::class)->shallow()->only('create', 'store', 'destroy');
     Route::resource('invoices.lines', InvoiceLineController::class)->shallow()->except('index', 'show');
 
