@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Attachments\HasAttachments;
+use App\Enums\InvoiceStatus;
 use App\Enums\TaskPriority;
 use App\Enums\TaskStatus;
 use App\Support\Duration;
@@ -209,6 +210,23 @@ class Task extends Model
 
             return (bool) $line?->delete();
         });
+    }
+
+    /**
+     * Open the task again when the invoice it was billed on has been cancelled. Unlike reopen(),
+     * the line stays where it is, as part of the record of what was sent; the task simply lets go
+     * of it, and is billed afresh when it is next closed.
+     */
+    public function reopenOffCancelledInvoice(): void
+    {
+        $this->invoiceLine?->invoice->status() === InvoiceStatus::Cancelled
+            || throw new LogicException('This task is not billed on a cancelled invoice.');
+
+        $this->closed_at = null;
+        $this->invoiced_at = null;
+        $this->invoice_line_id = null;
+        $this->save();
+        $this->unsetRelation('invoiceLine');
     }
 
     /**

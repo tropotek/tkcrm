@@ -23,6 +23,8 @@ class InvoiceIssueTest extends TestCase
 {
     use RefreshDatabase;
 
+    private const DIALOG = ['HX-Request' => 'true', 'HX-Target' => 'app-modal-content'];
+
     private User $user;
 
     private Company $client;
@@ -240,7 +242,12 @@ class InvoiceIssueTest extends TestCase
 
         $this->get("/invoices/{$this->invoice->id}")
             ->assertDontSee('action="'.route('invoices.reopen', $this->invoice).'"', false)
-            ->assertDontSee('action="'.route('invoices.cancel', $this->invoice).'"', false);
+            ->assertDontSee(route('invoices.cancel.confirm', $this->invoice), false);
+
+        $this->get("/invoices/{$this->invoice->id}/cancel", self::DIALOG)
+            ->assertOk()
+            ->assertSee('This invoice has a payment against it, so it cannot be cancelled.')
+            ->assertDontSee('hx-post', false);
 
         $this->expectException(LogicException::class);
         $this->invoice->fresh()->reopen();
@@ -265,6 +272,96 @@ class InvoiceIssueTest extends TestCase
         $this->assertSame(InvoiceStatus::Cancelled, $invoice->fresh()->status());
     }
 
+    private function billedTask(string $subject, int $minutes = 60): Task
+    {
+        $task = Task::factory()->for($this->client)->create(['subject' => $subject]);
+        TaskLog::factory()->for($task)->for(Product::factory()->create(['price' => 12000]))->create(['minutes' => $minutes]);
+        $task->close();
+
+        return $task;
+    }
+
+    public function test_the_cancel_dialog_offers_to_reopen_the_tasks_billed_on_the_invoice_ticked_to_begin_with(): void
+    {
+        $this->billedTask('Build the order form');
+        $this->billedTask('Connect the gateway');
+        $this->invoice->issue();
+
+        $this->get("/invoices/{$this->invoice->id}/cancel", self::DIALOG)
+            ->assertOk()
+            ->assertSee('<h5 class="modal-title">Cancel invoice 1</h5>', false)
+            ->assertSee('<form hx-post="'.route('invoices.cancel', $this->invoice).'" hx-target="#app-modal-content"', false)
+            ->assertSeeInOrder(['Wattle Creek Bakery', '$1,296.00', 'name="reopen_tasks" value="1" class="form-check-input" checked', 'the 2 tasks', 'Build the order form', 'Connect the gateway', 'Keep the invoice', 'Cancel the invoice'], false)
+            ->assertDontSee('<html', false);
+    }
+
+    public function test_the_cancel_dialog_has_no_box_when_no_task_is_billed_on_the_invoice(): void
+    {
+        $this->invoice->issue();
+
+        $this->get("/invoices/{$this->invoice->id}/cancel", self::DIALOG)
+            ->assertOk()
+            ->assertSee('Cancel the invoice')
+            ->assertDontSee('reopen_tasks', false);
+
+        $this->post("/invoices/{$this->invoice->id}/cancel", ['reopen_tasks' => '1'], self::DIALOG)
+            ->assertNoContent()
+            ->assertHeader('HX-Refresh', 'true')
+            ->assertSessionHas('success', 'Invoice 1 cancelled.');
+    }
+
+    public function test_cancelling_with_the_box_ticked_reopens_its_tasks_and_keeps_its_lines(): void
+    {
+        $first = $this->billedTask('Build the order form');
+        $second = $this->billedTask('Connect the gateway', 30);
+        $this->invoice->issue();
+        $before = $this->stored($this->invoice);
+
+        $this->post("/invoices/{$this->invoice->id}/cancel", ['reopen_tasks' => '1'], self::DIALOG)
+            ->assertNoContent()
+            ->assertHeader('HX-Refresh', 'true')
+            ->assertSessionHas('success', 'Invoice 1 cancelled, and its 2 tasks re-opened.');
+
+        $this->assertSame([InvoiceStatus::Cancelled, $before, 3], [$this->invoice->fresh()->status(), $this->stored($this->invoice), $this->invoice->lines()->count()]);
+
+        foreach ([$first, $second] as $task) {
+            $task->refresh();
+            $this->assertSame([true, null, null, false], [$task->isOpen(), $task->invoiced_at, $task->invoice_line_id, $task->isLockedByInvoice()]);
+        }
+
+        // The time is billed again, on a new invoice, when the task is next closed.
+        $line = $first->close();
+        $this->assertSame([12000, true], [$line->unit_price->inCents(), $line->invoice->isOpen()]);
+        $this->assertFalse($line->invoice->is($this->invoice));
+        $this->assertSame(3, $this->invoice->lines()->count());
+    }
+
+    public function test_one_task_is_worded_as_one(): void
+    {
+        $this->billedTask('Build the order form');
+        $this->invoice->issue();
+
+        $this->get("/invoices/{$this->invoice->id}/cancel", self::DIALOG)->assertSee('Re-open the task billed on it');
+        $this->post("/invoices/{$this->invoice->id}/cancel", ['reopen_tasks' => '1'], self::DIALOG)
+            ->assertSessionHas('success', 'Invoice 1 cancelled, and its task re-opened.');
+    }
+
+    public function test_cancelling_with_the_box_unticked_leaves_its_tasks_closed_and_billed(): void
+    {
+        $task = $this->billedTask('Build the order form');
+        $this->invoice->issue();
+
+        $this->post("/invoices/{$this->invoice->id}/cancel", [], self::DIALOG)
+            ->assertNoContent()
+            ->assertSessionHas('success', 'Invoice 1 cancelled.');
+
+        $task->refresh();
+        $this->assertSame([false, true, true], [$task->isOpen(), $task->invoiced_at !== null, $task->isLockedByInvoice()]);
+
+        $this->expectException(LogicException::class);
+        Task::factory()->create()->reopenOffCancelledInvoice();
+    }
+
     public function test_an_open_or_paid_invoice_is_not_reopened_or_cancelled(): void
     {
         $this->post("/invoices/{$this->invoice->id}/reopen")->assertSessionHas('error', 'Only an unpaid invoice can be re-opened.');
@@ -282,7 +379,7 @@ class InvoiceIssueTest extends TestCase
     {
         $issue = 'action="'.route('invoices.issue', $this->invoice).'"';
         $reopen = 'action="'.route('invoices.reopen', $this->invoice).'"';
-        $cancel = 'action="'.route('invoices.cancel', $this->invoice).'"';
+        $cancel = 'hx-get="'.route('invoices.cancel.confirm', $this->invoice).'" hx-target="#app-modal-content"';
 
         $this->get("/invoices/{$this->invoice->id}")->assertSee($issue, false)->assertSee('Issue this invoice for $1,080.00?', false)->assertDontSee($reopen, false)->assertDontSee($cancel, false);
         $this->get('/invoices/'.Invoice::factory()->create()->id)->assertDontSee('/issue"', false);

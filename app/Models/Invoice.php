@@ -275,15 +275,35 @@ class Invoice extends Model
     }
 
     /**
-     * Cancel the invoice. It keeps its number and its stored totals, as a record of what was sent.
+     * Cancel the invoice. It keeps its number, its lines and its stored totals, as a record of
+     * what was sent.
+     *
+     * The tasks billed on it can be re-opened with it, so their time can be billed again on
+     * another invoice. Left alone they stay closed and marked billed on an invoice nobody will pay.
+     *
+     * @return int how many tasks were re-opened
      */
-    public function cancel(): void
+    public function cancel(bool $reopenTasks = false): int
     {
         if ($problem = $this->cancelProblem()) {
             throw new LogicException($problem);
         }
 
-        $this->forceFill(['cancelled_on' => self::day(null)])->save();
+        return DB::transaction(function () use ($reopenTasks) {
+            $this->forceFill(['cancelled_on' => self::day(null)])->save();
+
+            return $reopenTasks ? $this->tasks()->get()->each->reopenOffCancelledInvoice()->count() : 0;
+        });
+    }
+
+    /**
+     * The tasks whose time is billed on this invoice.
+     *
+     * @return Builder<Task>
+     */
+    public function tasks(): Builder
+    {
+        return Task::whereIn('invoice_line_id', $this->lines()->select('id'))->orderBy('id');
     }
 
     private static function day(?DateTimeInterface $on): string

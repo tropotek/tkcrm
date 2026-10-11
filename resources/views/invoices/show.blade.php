@@ -34,11 +34,7 @@
                 @csrf
                 <button type="submit" class="btn btn-light"><i class="ri-restart-line me-1"></i>Re-open</button>
             </form>
-            <form method="POST" action="{{ route('invoices.cancel', $invoice) }}" class="d-inline"
-                onsubmit="return confirm('Cancel this invoice? It keeps its number and cannot be brought back.')">
-                @csrf
-                <button type="submit" class="btn btn-outline-danger">Cancel invoice</button>
-            </form>
+            <button type="button" class="btn btn-outline-danger" hx-get="{{ route('invoices.cancel.confirm', $invoice) }}" hx-target="#app-modal-content">Cancel invoice</button>
         @endif
     </x-slot:actions>
 

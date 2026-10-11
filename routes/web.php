@@ -40,6 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('invoices', InvoiceController::class)->except('create');
     Route::post('/invoices/{invoice}/issue', [InvoiceController::class, 'issue'])->name('invoices.issue');
     Route::post('/invoices/{invoice}/reopen', [InvoiceController::class, 'reopen'])->name('invoices.reopen');
+    Route::get('/invoices/{invoice}/cancel', [InvoiceController::class, 'confirmCancel'])->name('invoices.cancel.confirm');
     Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');
     Route::resource('invoices.lines', InvoiceLineController::class)->shallow()->except('index', 'show');
 

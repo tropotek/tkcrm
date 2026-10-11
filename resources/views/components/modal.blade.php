@@ -11,8 +11,9 @@
     re-renders it with its errors; a reply with the header HX-Trigger: modal-close closes it.
 
     method: post (default), put, patch or delete.   size: sm, lg or xl.
+    dismiss: the label of the button that closes the dialog without saving (Cancel).
 --}}
-@props(['title', 'action' => null, 'method' => 'post', 'size' => null])
+@props(['title', 'action' => null, 'method' => 'post', 'size' => null, 'dismiss' => 'Cancel'])
 
 <div class="modal-header" @if ($size) data-modal-size="{{ $size }}" @endif>
     <h5 class="modal-title">{{ $title }}</h5>
@@ -29,7 +30,7 @@
 
 @isset($footer)
     <div class="modal-footer">
-        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">{{ $dismiss }}</button>
         {{ $footer }}
     </div>
 @endisset

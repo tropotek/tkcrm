@@ -109,17 +109,40 @@ class InvoiceController extends Controller
         return $back->with('success', "Invoice {$invoice->number} re-opened. It keeps its number, and can be changed and issued again.");
     }
 
-    public function cancel(Invoice $invoice): RedirectResponse
+    /**
+     * The dialog that asks before cancelling, with a box to re-open the tasks billed on it.
+     */
+    public function confirmCancel(Invoice $invoice): View
     {
-        $back = redirect()->route('invoices.show', $invoice);
+        return view('invoices.cancel-dialog', [
+            'invoice' => $invoice,
+            'problem' => $invoice->cancelProblem(),
+            'tasks' => $invoice->tasks()->get(),
+        ]);
+    }
 
-        if ($problem = $invoice->cancelProblem()) {
-            return $back->with('error', $problem);
+    /**
+     * `reopen_tasks` re-opens the tasks billed on it, so their time can be billed again.
+     * Posted from the dialog, the answer has the invoice page load again.
+     */
+    public function cancel(Request $request, Invoice $invoice): RedirectResponse|Response
+    {
+        $problem = $invoice->cancelProblem();
+
+        if ($problem === null) {
+            $reopened = $invoice->cancel($request->boolean('reopen_tasks'));
+            $message = "Invoice {$invoice->number} cancelled".match ($reopened) {
+                0 => '.',
+                1 => ', and its task re-opened.',
+                default => ", and its {$reopened} tasks re-opened.",
+            };
         }
 
-        $invoice->cancel();
+        $request->session()->flash($problem ? 'error' : 'success', $problem ?? $message);
 
-        return $back->with('success', "Invoice {$invoice->number} cancelled.");
+        return $request->header('HX-Request')
+            ? response()->noContent()->header('HX-Refresh', 'true')
+            : redirect()->route('invoices.show', $invoice);
     }
 
     /**
