@@ -40,7 +40,7 @@ return [
 
     ['title' => 'Records'],
     ['label' => 'Companies', 'icon' => 'ri-building-line', 'route' => 'companies.index'],
-    ['label' => 'Products', 'icon' => 'ri-price-tag-3-line', 'route' => 'products.index'],
+    ['label' => 'Products', 'icon' => 'ri-price-tag-3-line', 'route' => 'products.index', 'active' => ['products.*', 'product-categories.*']],
     ['label' => 'Domains', 'icon' => 'ri-global-line', 'route' => 'domains.index'],
 
     ['title' => 'Reports'],

@@ -3,26 +3,20 @@
 namespace App\Http\Requests;
 
 use App\Enums\CompanyType;
+use App\Http\Requests\Concerns\AnswersInDialog;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class CompanyRequest extends FormRequest
 {
+    use AnswersInDialog;
+
     public function authorize(): bool
     {
         return true;
-    }
-
-    /**
-     * Whether the form was posted from the shared dialog, which sends only the short set of fields.
-     */
-    public function fromDialog(): bool
-    {
-        return $this->header('HX-Target') === 'app-modal-content';
     }
 
     /**
@@ -93,18 +87,12 @@ class CompanyRequest extends FormRequest
         ];
     }
 
-    /**
-     * A form in the dialog comes back into the dialog with its errors, as a 422 that htmx swaps in.
-     * The dialog fills its fields from the request, so nothing is flashed to the session.
-     */
     protected function failedValidation(Validator $validator): void
     {
-        if (! $this->fromDialog()) {
-            parent::failedValidation($validator);
+        if ($this->fromDialog()) {
+            $this->failInDialog($validator, 'companies.dialog', ['types' => CompanyType::cases()]);
         }
 
-        $dialog = view('companies.dialog', ['types' => CompanyType::cases()])->withErrors($validator);
-
-        throw new HttpResponseException(response($dialog->render(), 422));
+        parent::failedValidation($validator);
     }
 }

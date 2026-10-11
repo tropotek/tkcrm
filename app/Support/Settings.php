@@ -56,7 +56,7 @@ class Settings
             'default_labour_product_id' => [
                 'default' => null,
                 'type' => 'id',
-                'rules' => ['nullable', 'integer', 'min:1'],
+                'rules' => ['nullable', 'integer', 'exists:products,id'],
             ],
             'time_logs_billable' => [
                 'default' => true,

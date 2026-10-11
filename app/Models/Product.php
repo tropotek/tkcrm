@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Enums\Cycle;
+use App\Facades\Settings;
 use App\Support\Money;
 use Database\Factories\ProductFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -62,5 +63,14 @@ class Product extends Model
     public function scopeActive(Builder $query): void
     {
         $query->where('active', true);
+    }
+
+    /**
+     * Whether anything refers to this product, in which case it is made inactive instead of deleted.
+     * Each module that points at a product adds its own check here.
+     */
+    public function isInUse(): bool
+    {
+        return Settings::get('default_labour_product_id') === $this->id;
     }
 }

@@ -9,6 +9,14 @@ if (element) {
     const dialog = element.querySelector('.modal-dialog');
     const modal = Modal.getOrCreateInstance(element);
 
+    // Whatever loads into the dialog replaces its contents, never the element itself. A button inside
+    // a table that swaps itself with hx-swap="outerHTML" would otherwise inherit that and remove the dialog.
+    document.body.addEventListener('htmx:beforeSwap', (event) => {
+        if (event.detail.target === content) {
+            event.detail.swapOverride = 'innerHTML';
+        }
+    });
+
     content.addEventListener('htmx:afterSwap', (event) => {
         // Swaps deeper inside the dialog bubble up to here too.
         if (event.detail.target !== content) {

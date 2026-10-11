@@ -104,8 +104,10 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - The seeder's companies, and every factory, use made-up names and `example.com` addresses. Keep it that way.
 - A list page follows `companies/`: a search object (`App\Companies\CompanySearch`) reads the filters and order from the query string, the controller returns the whole page or the `_table` partial alone when htmx asks for the table's id, and the filter form swaps the table as it changes.
 - A form's text fields use `<x-field name="…" label="…" :value="…" />`. A company is chosen in another form with `<x-company-select>`, whose New button adds one in the shared dialog; the save answers with a `company-added` event carrying its id, name and type.
-- A form re-rendered in the dialog after a failed save fills its fields from the request, not from `old()`, and flashes nothing (see `CompanyRequest::failedValidation` and `companies/dialog.blade.php`).
-- Records with history (companies, and later products and the rest) are made inactive, not deleted.
+- A form request whose form can be posted from the dialog uses the `AnswersInDialog` trait. The form re-rendered in the dialog after a failed save fills its fields from the request, not from `old()`, and flashes nothing (see `CompanyRequest` and `companies/dialog.blade.php`, or `product-categories/` for a form that lives only in the dialog and refreshes its list with an event).
+- Records with history are made inactive, not deleted. A company has no delete. A product can be deleted only while `$product->isInUse()` is false: a module that points at a product (time logs, recurring items) adds its check to that method. A category can be deleted only while it has no products.
+- With GST off, no page, PDF or email mentions GST. Check `Settings::get('gst_enabled')` before showing a GST field, badge or column.
+- `GET /products/{id}/lookup` gives a product's code, name, description, price (a decimal string), GST-free flag and cycle as JSON, for a form that fills a line from a product.
 - Do not give an element the id `status` or `preloader`: the Minton skin styles both and hides `#status`.
 - There are no roles or permissions. Every login sees and does everything, so no screen checks an ability for who the user is.
 - Until the app is live, a schema change edits the table's own migration rather than adding a second one; rebuild with `composer fresh`.

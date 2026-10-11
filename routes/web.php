@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\HealthController;
+use App\Http\Controllers\ProductCategoryController;
+use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Middleware\ApplySettings;
@@ -22,6 +24,10 @@ Route::middleware('auth')->group(function () {
 
     // Companies are never deleted here: a client or supplier that is done with is made inactive.
     Route::resource('companies', CompanyController::class)->except('destroy');
+
+    Route::get('/products/{product}/lookup', [ProductController::class, 'lookup'])->name('products.lookup');
+    Route::resource('products', ProductController::class)->except('show');
+    Route::resource('product-categories', ProductCategoryController::class)->except('show');
 
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Facades\Settings;
+use App\Models\Product;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -21,8 +22,13 @@ class SettingsController extends Controller
 
         return view('settings.edit', [
             'settings' => $settings,
-            // Products arrive with task 23; until then there is nothing to choose.
-            'products' => [],
+            // Inactive products are left out, except the one already chosen.
+            'products' => Product::query()
+                ->where(fn ($query) => $query->where('active', true)->orWhere('id', $settings['default_labour_product_id']))
+                ->orderByRaw('name COLLATE NOCASE')
+                ->get()
+                ->mapWithKeys(fn (Product $product) => [$product->id => "{$product->name} ({$product->code})"])
+                ->all(),
         ]);
     }
 

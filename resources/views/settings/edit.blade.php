@@ -46,7 +46,7 @@
                             @else
                                 <div class="form-text">
                                     The product a new time log is charged as.
-                                    @if (! $products) There are no products to choose from yet. @endif
+                                    @if (! $products) There are no products to choose from yet: add one under Products. @endif
                                 </div>
                             @enderror
                         </div>
