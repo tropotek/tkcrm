@@ -81,7 +81,7 @@ class DatabaseSeeder extends Seeder
             ],
             'Domains' => [
                 ['code' => 'DOM-AU', 'name' => '.com.au domain', 'price' => 4500, 'cycle' => Cycle::Biannual],
-                ['code' => 'DOM-COM', 'name' => '.com domain', 'price' => 2500, 'cycle' => Cycle::Year, 'gst_free' => true],
+                ['code' => 'DOM-COM', 'name' => '.com domain', 'price' => 2500, 'cycle' => Cycle::Year],
             ],
         ];
 

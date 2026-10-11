@@ -44,12 +44,6 @@ class ProductManagerTest extends TestCase
         ];
     }
 
-    private function gstOn(): void
-    {
-        Settings::set('gst_enabled', true);
-        $this->app->forgetScopedInstances();
-    }
-
     public function test_a_guest_is_sent_to_the_login_screen(): void
     {
         $product = Product::factory()->create();
@@ -98,19 +92,18 @@ class ProductManagerTest extends TestCase
         $this->actingAs($this->user)->get('/products?q=zzz')->assertSee('No products match.');
     }
 
-    public function test_gst_is_not_mentioned_while_it_is_off(): void
+    public function test_a_product_has_nothing_to_do_with_gst_which_is_charged_on_the_whole_invoice(): void
     {
-        $product = Product::factory()->gstFree()->create();
+        $product = Product::factory()->create();
 
-        $this->actingAs($this->user)->get('/products')->assertDontSee('GST');
-        $this->actingAs($this->user)->get('/products/create')->assertDontSee('GST');
-        $this->actingAs($this->user)->get("/products/{$product->id}/edit")->assertDontSee('GST');
+        foreach ([false, true] as $gst) {
+            Settings::set('gst_enabled', $gst);
+            $this->app->forgetScopedInstances();
 
-        $this->gstOn();
-
-        $this->actingAs($this->user)->get('/products')->assertSee('GST-free');
-        $this->actingAs($this->user)->get("/products/{$product->id}/edit")
-            ->assertSee('name="gst_free" value="1" class="form-check-input" checked', false);
+            $this->actingAs($this->user)->get('/products')->assertDontSee('GST');
+            $this->actingAs($this->user)->get('/products/create')->assertDontSee('GST');
+            $this->actingAs($this->user)->get("/products/{$product->id}/edit")->assertDontSee('GST');
+        }
     }
 
     public function test_a_product_can_be_added_with_its_price_typed_as_dollars(): void
@@ -131,33 +124,9 @@ class ProductManagerTest extends TestCase
         $this->assertSame(133050, $product->price->inCents());
         $this->assertSame(Cycle::Year, $product->cycle);
         $this->assertSame(
-            [$this->category->id, 'Web hosting', 'HOST-STD', 'A year of hosting', 'Reviewed each July.', true, false],
-            [$product->product_category_id, $product->name, $product->code, $product->description, $product->notes, $product->active, $product->gst_free],
+            [$this->category->id, 'Web hosting', 'HOST-STD', 'A year of hosting', 'Reviewed each July.', true],
+            [$product->product_category_id, $product->name, $product->code, $product->description, $product->notes, $product->active],
         );
-    }
-
-    public function test_the_gst_free_box_is_saved_only_while_gst_is_on(): void
-    {
-        $this->actingAs($this->user)->post('/products', $this->form(['gst_free' => '1']))->assertSessionHasNoErrors();
-        $this->assertFalse(Product::sole()->gst_free, 'GST is off, so the box was not on the form.');
-
-        $this->gstOn();
-        $product = Product::sole();
-
-        $this->actingAs($this->user)->put("/products/{$product->id}", $this->form(['gst_free' => '1']))->assertSessionHasNoErrors();
-        $this->assertTrue($product->fresh()->gst_free);
-
-        $this->actingAs($this->user)->put("/products/{$product->id}", $this->form())->assertSessionHasNoErrors();
-        $this->assertFalse($product->fresh()->gst_free);
-    }
-
-    public function test_saving_with_gst_off_leaves_a_gst_free_flag_as_it_is(): void
-    {
-        $product = Product::factory()->gstFree()->create();
-
-        $this->actingAs($this->user)->put("/products/{$product->id}", $this->form())->assertSessionHasNoErrors();
-
-        $this->assertTrue($product->fresh()->gst_free);
     }
 
     public function test_bad_details_are_refused(): void
@@ -279,9 +248,9 @@ class ProductManagerTest extends TestCase
         $this->assertFalse($product->fresh()->active);
     }
 
-    public function test_the_lookup_gives_a_products_code_price_and_gst_flag_as_json(): void
+    public function test_the_lookup_gives_a_products_code_price_and_cycle_as_json(): void
     {
-        $product = Product::factory()->gstFree()->cycle(Cycle::Month)->create([
+        $product = Product::factory()->cycle(Cycle::Month)->create([
             'code' => 'HOST-MAIL', 'name' => 'Email hosting', 'price' => 123450, 'description' => 'Per mailbox',
         ]);
 
@@ -294,7 +263,6 @@ class ProductManagerTest extends TestCase
                 'name' => 'Email hosting',
                 'description' => 'Per mailbox',
                 'price' => '1234.50',
-                'gst_free' => true,
                 'cycle' => 'month',
                 'active' => true,
             ]);

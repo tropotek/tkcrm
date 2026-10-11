@@ -20,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property Money $price
  * @property Cycle $cycle
  */
-#[Fillable(['product_category_id', 'name', 'code', 'price', 'cycle', 'gst_free', 'description', 'notes', 'active'])]
+#[Fillable(['product_category_id', 'name', 'code', 'price', 'cycle', 'description', 'notes', 'active'])]
 class Product extends Model
 {
     /** @use HasFactory<ProductFactory> */
@@ -30,7 +30,6 @@ class Product extends Model
     protected $attributes = [
         'price' => 0,
         'cycle' => 'each',
-        'gst_free' => false,
         'active' => true,
     ];
 
@@ -44,7 +43,6 @@ class Product extends Model
         return [
             'price' => MoneyCast::class,
             'cycle' => Cycle::class,
-            'gst_free' => 'boolean',
             'active' => 'boolean',
         ];
     }

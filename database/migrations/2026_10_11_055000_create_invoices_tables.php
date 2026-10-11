@@ -11,7 +11,7 @@ return new class extends Migration
      * because a billed task points at the line it became.
      *
      * An invoice is open until it is issued. Issuing gives it its number and due date and stores
-     * its totals, which nothing recalculates afterwards; until then all of those are null.
+     * its GST rate and totals, which nothing recalculates afterwards; until then all of those are null.
      */
     public function up(): void
     {
@@ -29,7 +29,9 @@ return new class extends Migration
             $table->date('paid_on')->nullable();
             $table->date('cancelled_on')->nullable();
             $table->text('notes')->nullable();
-            // The frozen totals, in cents (App\Casts\MoneyCast): null while the invoice is open.
+            // What issuing freezes, null while the invoice is open: the GST rate charged on the whole
+            // invoice (basis points, 0 for none) and the totals, in cents (App\Casts\MoneyCast).
+            $table->unsignedInteger('gst_rate')->nullable();
             $table->integer('subtotal')->nullable();
             $table->integer('discount_total')->nullable();
             $table->integer('gst_total')->nullable();
@@ -48,8 +50,6 @@ return new class extends Migration
             $table->string('quantity', 20)->default('1');
             // Cents (App\Casts\MoneyCast). It can be negative, for a line that takes money off.
             $table->integer('unit_price');
-            // Basis points: 1000 is 10%, and 0 is no GST.
-            $table->unsignedInteger('gst_rate')->default(0);
             $table->text('notes')->nullable();
             // The record the line was made from, by its morph map name: a task or a recurring item.
             $table->nullableMorphs('source');

@@ -25,7 +25,6 @@ class ProductFactory extends Factory
             'code' => strtoupper(fake()->unique()->bothify('???-###')),
             'price' => 5000,
             'cycle' => Cycle::Each,
-            'gst_free' => false,
             'description' => null,
             'notes' => null,
             'active' => true,
@@ -35,11 +34,6 @@ class ProductFactory extends Factory
     public function cycle(Cycle $cycle): static
     {
         return $this->state(['cycle' => $cycle]);
-    }
-
-    public function gstFree(): static
-    {
-        return $this->state(['gst_free' => true]);
     }
 
     public function inactive(): static

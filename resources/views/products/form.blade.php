@@ -1,6 +1,5 @@
 {{--
     The add and edit form.
-    $gst: whether GST is on. The GST-free box is only shown then.
     $inUse: something refers to the product, so it cannot be deleted.
 --}}
 <x-layouts.app :title="$product->exists ? 'Edit '.$product->name : 'Add product'">
@@ -62,13 +61,6 @@
                                 <div class="form-text">How often a recurring item for this product bills, to begin with.</div>
                             @enderror
                         </div>
-
-                        @if ($gst)
-                            <div class="form-check mb-2">
-                                <input type="checkbox" id="gst_free" name="gst_free" value="1" class="form-check-input" @checked(old('gst_free', $product->gst_free))>
-                                <label for="gst_free" class="form-check-label">GST-free</label>
-                            </div>
-                        @endif
 
                         <div class="form-check">
                             <input type="checkbox" id="active" name="active" value="1" class="form-check-input" @checked(old('active', $product->active))>

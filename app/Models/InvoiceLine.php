@@ -22,9 +22,8 @@ use InvalidArgumentException;
  *
  * @property string $quantity
  * @property Money $unit_price
- * @property int $gst_rate basis points
  */
-#[Fillable(['invoice_id', 'product_code', 'description', 'quantity', 'unit_price', 'gst_rate', 'notes'])]
+#[Fillable(['invoice_id', 'product_code', 'description', 'quantity', 'unit_price', 'notes'])]
 class InvoiceLine extends Model
 {
     /** @use HasFactory<InvoiceLineFactory> */
@@ -33,7 +32,6 @@ class InvoiceLine extends Model
     /** @var array<string, mixed> */
     protected $attributes = [
         'quantity' => '1',
-        'gst_rate' => 0,
     ];
 
     /**
@@ -45,7 +43,6 @@ class InvoiceLine extends Model
     {
         return [
             'unit_price' => MoneyCast::class,
-            'gst_rate' => 'integer',
         ];
     }
 
@@ -71,7 +68,7 @@ class InvoiceLine extends Model
     }
 
     /**
-     * The quantity times the unit price, rounded half up to the cent, before any discount or GST.
+     * The quantity times the unit price, rounded half up to the cent. Discount and GST are the invoice's.
      */
     public function total(): Money
     {

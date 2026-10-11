@@ -28,7 +28,7 @@ class InvoiceFactory extends Factory
     }
 
     /**
-     * Issued a week ago and due in a week, with a number and the given total stored. It is only
+     * Issued a week ago and due in a week, with a number and the given total stored and no GST. It is only
      * the stored figures: the lines are whatever the test gives it.
      */
     public function issued(int $total = 10000): static
@@ -37,6 +37,7 @@ class InvoiceFactory extends Factory
             'number' => (Invoice::max('number') ?? 1000) + 1,
             'issued_on' => today()->subWeek(),
             'due_on' => today()->addWeek(),
+            'gst_rate' => 0,
             'subtotal' => $total,
             'discount_total' => 0,
             'gst_total' => 0,

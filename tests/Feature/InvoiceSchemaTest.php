@@ -26,13 +26,13 @@ class InvoiceSchemaTest extends TestCase
         $this->assertEqualsCanonicalizing(
             [
                 'id', 'company_id', 'number', 'purchase_order', 'discount', 'billing_address', 'issued_on', 'due_on', 'paid_on', 'cancelled_on',
-                'notes', 'subtotal', 'discount_total', 'gst_total', 'total', 'created_at', 'updated_at',
+                'notes', 'gst_rate', 'subtotal', 'discount_total', 'gst_total', 'total', 'created_at', 'updated_at',
             ],
             Schema::getColumnListing('invoices'),
         );
 
         $this->assertEqualsCanonicalizing(
-            ['id', 'invoice_id', 'product_code', 'description', 'quantity', 'unit_price', 'gst_rate', 'notes', 'source_type', 'source_id', 'created_at', 'updated_at'],
+            ['id', 'invoice_id', 'product_code', 'description', 'quantity', 'unit_price', 'notes', 'source_type', 'source_id', 'created_at', 'updated_at'],
             Schema::getColumnListing('invoice_lines'),
         );
 
@@ -52,8 +52,8 @@ class InvoiceSchemaTest extends TestCase
             $this->assertTrue($read->isOpen());
             $this->assertSame(0, $read->discount);
             $this->assertSame(
-                [null, null, null, null, null, null, null, null, null],
-                [$read->number, $read->issued_on, $read->due_on, $read->paid_on, $read->cancelled_on, $read->subtotal, $read->discount_total, $read->gst_total, $read->total],
+                [null, null, null, null, null, null, null, null, null, null],
+                [$read->number, $read->issued_on, $read->due_on, $read->paid_on, $read->cancelled_on, $read->gst_rate, $read->subtotal, $read->discount_total, $read->gst_total, $read->total],
             );
         }
 
@@ -66,13 +66,13 @@ class InvoiceSchemaTest extends TestCase
 
         $invoice->update([
             'number' => 7, 'issued_on' => '2026-06-01', 'due_on' => '2026-06-15', 'paid_on' => '2026-06-02', 'cancelled_on' => '2026-06-03',
-            'subtotal' => 100, 'discount_total' => 0, 'gst_total' => 10, 'total' => 110,
+            'gst_rate' => 1000, 'subtotal' => 100, 'discount_total' => 0, 'gst_total' => 10, 'total' => 110,
             'purchase_order' => 'PO-88', 'discount' => 1000, 'billing_address' => "1 Mill Lane\nWattle Creek", 'notes' => 'Thanks.',
         ]);
 
         $invoice = $invoice->fresh();
         $this->assertTrue($invoice->isOpen());
-        $this->assertSame([null, null, null], [$invoice->number, $invoice->due_on, $invoice->total]);
+        $this->assertSame([null, null, null, null], [$invoice->number, $invoice->due_on, $invoice->gst_rate, $invoice->total]);
         $this->assertSame(['PO-88', 1000, "1 Mill Lane\nWattle Creek", 'Thanks.'], [$invoice->purchase_order, $invoice->discount, $invoice->billing_address, $invoice->notes]);
     }
 
@@ -81,12 +81,12 @@ class InvoiceSchemaTest extends TestCase
         $invoice = Invoice::factory()->create();
         $invoice->forceFill([
             'number' => 1042, 'issued_on' => '2026-06-01', 'due_on' => '2026-06-15',
-            'subtotal' => 100000, 'discount_total' => 10000, 'gst_total' => 9000, 'total' => 99000,
+            'gst_rate' => 1000, 'subtotal' => 100000, 'discount_total' => 10000, 'gst_total' => 9000, 'total' => 99000,
         ])->save();
 
         $invoice = $invoice->fresh();
         $this->assertFalse($invoice->isOpen());
-        $this->assertSame(1042, $invoice->number);
+        $this->assertSame([1042, 1000], [$invoice->number, $invoice->gst_rate]);
         $this->assertInstanceOf(CarbonImmutable::class, $invoice->issued_on);
         $this->assertSame(['2026-06-01', '2026-06-15'], [$invoice->issued_on->toDateString(), $invoice->due_on->toDateString()]);
         $this->assertInstanceOf(Money::class, $invoice->total);
@@ -140,23 +140,22 @@ class InvoiceSchemaTest extends TestCase
         $this->assertTrue($company->openInvoice()->is($next));
     }
 
-    public function test_a_line_has_a_decimal_string_quantity_a_price_in_cents_and_a_gst_rate_in_basis_points(): void
+    public function test_a_line_has_a_decimal_string_quantity_and_a_price_in_cents(): void
     {
         $invoice = Invoice::factory()->create();
-        $line = $invoice->lines()->create(['product_code' => 'LAB', 'description' => 'Labour', 'quantity' => '1.25', 'unit_price' => Money::parse('120.00'), 'gst_rate' => 1000, 'notes' => 'June']);
+        $line = $invoice->lines()->create(['product_code' => 'LAB', 'description' => 'Labour', 'quantity' => '1.25', 'unit_price' => Money::parse('120.00'), 'notes' => 'June']);
 
         $line = $line->fresh();
         $this->assertSame('1.25', $line->quantity);
         $this->assertSame('1.25', DB::table('invoice_lines')->value('quantity'));
         $this->assertSame(12000, $line->unit_price->inCents());
-        $this->assertSame(1000, $line->gst_rate);
         $this->assertSame(['LAB', 'Labour', 'June'], [$line->product_code, $line->description, $line->notes]);
         $this->assertSame(15000, $line->unit_price->multiply($line->quantity)->inCents());
         $this->assertNull($line->source);
         $this->assertTrue($line->invoice->is($invoice));
 
         $plain = $invoice->lines()->create(['description' => 'Call-out fee', 'unit_price' => -2500])->fresh();
-        $this->assertSame(['1', -2500, 0, null], [$plain->quantity, $plain->unit_price->inCents(), $plain->gst_rate, $plain->product_code]);
+        $this->assertSame(['1', -2500, null], [$plain->quantity, $plain->unit_price->inCents(), $plain->product_code]);
         $this->assertSame('3', $invoice->lines()->create(['description' => 'Domains', 'quantity' => 3, 'unit_price' => 100])->fresh()->quantity);
         $this->assertSame([$line->id, $plain->id], $invoice->lines()->limit(2)->pluck('id')->all());
     }

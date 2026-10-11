@@ -16,14 +16,14 @@ class InvoiceTotalsTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * @param  list<array{0: int|string, 1: int, 2?: int}>  $lines  quantity, unit price in cents, GST basis points
+     * @param  list<array{0: int|string, 1: int}>  $lines  quantity and unit price in cents
      */
     private function invoice(array $lines, int $discount = 0): Invoice
     {
         $invoice = Invoice::factory()->create(['discount' => $discount]);
 
         foreach ($lines as $line) {
-            InvoiceLine::factory()->for($invoice)->create(['quantity' => $line[0], 'unit_price' => $line[1], 'gst_rate' => $line[2] ?? 0]);
+            InvoiceLine::factory()->for($invoice)->create(['quantity' => $line[0], 'unit_price' => $line[1]]);
         }
 
         return $invoice;
@@ -91,29 +91,28 @@ class InvoiceTotalsTest extends TestCase
         $this->assertSame([1005, 503, 0, 502], $this->cents(InvoiceTotals::of($this->invoice([[1, 1005]], 5000))));
     }
 
-    public function test_gst_is_charged_per_line_on_what_is_left_after_the_discount(): void
+    public function test_gst_is_one_rate_on_the_whole_invoice_after_the_discount(): void
     {
-        // $100.00 with GST and $50.00 without, less 10%: GST is 10% of $90.00.
-        $this->assertSame([15000, 1500, 900, 14400], $this->cents(InvoiceTotals::of($this->invoice([[1, 10000, 1000], [1, 5000, 0]], 1000))));
+        // $150.00 less 10% is $135.00, and 10% of that goes on top.
+        $invoice = $this->invoice([[1, 10000], [1, 5000]], 1000);
+        $totals = InvoiceTotals::of($invoice, 1000);
 
-        // No discount: 10% of each line, each rounded. 10% of $0.05 is half a cent, twice.
-        $this->assertSame([10, 0, 2, 12], $this->cents(InvoiceTotals::of($this->invoice([[1, 5, 1000], [1, 5, 1000]]))));
-    }
+        $this->assertSame([15000, 1500, 1350, 14850], $this->cents($totals));
+        $this->assertSame(1000, $totals->gstRate);
+        $this->assertTrue($totals->chargesGst());
 
-    public function test_the_discount_is_spread_across_the_lines_to_the_cent_before_gst(): void
-    {
-        // $99.99 less 10% is a discount of $10.00 (999.9 goes up). A third of that is 333 and a bit:
-        // the lines take 334, 333 and 333, which is the whole $10.00, and GST is charged on what is left.
-        $totals = InvoiceTotals::of($this->invoice([[1, 3333, 1000], [1, 3333, 1000], [1, 3333, 1000]], 1000));
+        // It is rounded once, on the invoice: 10% of $0.15 is a cent and a half, not three half cents.
+        $this->assertSame([15, 0, 2, 17], $this->cents(InvoiceTotals::of($this->invoice([[1, 5], [1, 5], [1, 5]]), 1000)));
 
-        $this->assertSame([9999, 1000, 900, 9899], $this->cents($totals));
-        $this->assertSame([334, 333, 333], array_map(fn ($share) => $share->inCents(), $totals->lineDiscounts));
-        $this->assertSame([300, 300, 300], array_map(fn ($gst) => $gst->inCents(), $totals->lineGst));
+        // $99.99 less 10% ($10.00, as 999.9 goes up) is $89.99, and 10% of it is 899.9 cents.
+        $this->assertSame([9999, 1000, 900, 9899], $this->cents(InvoiceTotals::of($this->invoice([[3, 3333]], 1000), 1000)));
 
-        // The odd cent goes to the biggest line.
-        $uneven = InvoiceTotals::of($this->invoice([[1, 105, 1000], [1, 1000, 0]], 5000));
-        $this->assertSame([53, 500], array_map(fn ($share) => $share->inCents(), $uneven->lineDiscounts));
-        $this->assertSame([1105, 553, 5, 557], $this->cents($uneven));
+        // A line that takes money off takes its GST off with it.
+        $this->assertSame([8000, 0, 800, 8800], $this->cents(InvoiceTotals::of($this->invoice([[1, 10000], [1, -2000]]), 1000)));
+
+        $none = InvoiceTotals::of($invoice, 0);
+        $this->assertSame([15000, 1500, 0, 13500], $this->cents($none));
+        $this->assertFalse($none->chargesGst());
     }
 
     public function test_an_open_invoice_is_calculated_from_its_lines_as_they_are_now(): void
@@ -131,12 +130,13 @@ class InvoiceTotalsTest extends TestCase
     public function test_an_issued_invoice_gives_its_stored_totals_whatever_its_lines_say(): void
     {
         $invoice = $this->invoice([[2, 5000]], 1000);
-        $invoice->forceFill(['number' => 1001, 'issued_on' => '2026-06-01', 'subtotal' => 10000, 'discount_total' => 1000, 'gst_total' => 900, 'total' => 9900])->save();
+        $invoice->forceFill(['number' => 1001, 'issued_on' => '2026-06-01', 'gst_rate' => 1000, 'subtotal' => 10000, 'discount_total' => 1000, 'gst_total' => 900, 'total' => 9900])->save();
 
         $invoice->lines()->first()->update(['unit_price' => 99900]);
         Product::factory()->create(['price' => 99900]);
 
         $this->assertSame([10000, 1000, 900, 9900], $this->cents($invoice->fresh()->totals()));
+        $this->assertSame(1000, $invoice->fresh()->totals()->gstRate);
     }
 
     /**

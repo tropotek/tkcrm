@@ -3,7 +3,6 @@
 namespace App\Http\Requests;
 
 use App\Enums\Cycle;
-use App\Facades\Settings;
 use App\Models\Product;
 use App\Rules\MoneyAmount;
 use App\Support\Money;
@@ -27,7 +26,6 @@ class ProductRequest extends FormRequest
         $this->merge([
             'code' => is_string($this->input('code')) ? trim($this->input('code')) : $this->input('code'),
             'active' => $this->boolean('active'),
-            'gst_free' => $this->boolean('gst_free'),
         ]);
     }
 
@@ -54,8 +52,6 @@ class ProductRequest extends FormRequest
             }],
             'price' => ['required', new MoneyAmount],
             'cycle' => ['required', Rule::enum(Cycle::class)],
-            // The box is only on the form while GST is on. With GST off the flag is left as it is.
-            'gst_free' => [Rule::excludeIf(! Settings::get('gst_enabled')), 'boolean'],
             'description' => ['nullable', 'string', 'max:1000'],
             'notes' => ['nullable', 'string', 'max:10000'],
             'active' => ['boolean'],

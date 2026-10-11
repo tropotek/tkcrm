@@ -3,33 +3,29 @@
 namespace App\Invoices;
 
 use App\Facades\Settings;
-use App\Models\Product;
 
 /**
- * The GST rate a new invoice line takes. A line keeps the rate it was made with: turning GST on
- * or off, or changing the rate, in the settings changes the lines made afterwards and no others.
+ * GST is charged on a whole invoice at one rate, or not at all: it is not decided line by line,
+ * and no product is exempt. The business is either registered for GST (the setting is on) or not.
+ *
+ * An open invoice is worked out at the rate in force today. Issuing stores the rate with the
+ * totals, so an issued invoice keeps what it charged whatever the settings say later.
  */
 final class Gst
 {
+    /**
+     * Whether the business is registered, so that invoices issued now charge GST.
+     */
     public static function enabled(): bool
     {
         return (bool) Settings::get('gst_enabled');
     }
 
     /**
-     * The rate in basis points for a new line: none with GST off or for something GST-free,
-     * otherwise the configured rate.
+     * The rate in basis points an invoice issued now would charge: 0 when GST is off.
      */
-    public static function rate(bool $gstFree = false): int
+    public static function rate(): int
     {
-        return self::enabled() && ! $gstFree ? (int) Settings::get('gst_rate') : 0;
-    }
-
-    /**
-     * The rate for a line made from a product, or typed in by hand with none.
-     */
-    public static function rateFor(?Product $product): int
-    {
-        return self::rate($product?->gst_free ?? false);
+        return self::enabled() ? (int) Settings::get('gst_rate') : 0;
     }
 }

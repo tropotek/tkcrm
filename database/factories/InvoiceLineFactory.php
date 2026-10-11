@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 class InvoiceLineFactory extends Factory
 {
     /**
-     * One of something at $50.00 on a new open invoice, typed in by hand, with no GST.
+     * One of something at $50.00 on a new open invoice, typed in by hand.
      *
      * @return array<string, mixed>
      */
@@ -24,7 +24,6 @@ class InvoiceLineFactory extends Factory
             'description' => ucfirst(fake()->words(3, true)),
             'quantity' => '1',
             'unit_price' => 5000,
-            'gst_rate' => 0,
             'notes' => null,
         ];
     }

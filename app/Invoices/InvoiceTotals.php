@@ -12,71 +12,53 @@ use App\Support\Money;
  * - A line's total is its quantity times its unit price, rounded half up to the cent.
  * - The sub-total is the lines added up.
  * - The discount is the invoice's percentage of the sub-total, rounded once.
- * - GST is charged per line on what is left of it after its share of the discount, at the line's
- *   own rate, and added on top: prices do not include it.
+ * - GST is one rate on the whole invoice: that percentage of the sub-total less the discount,
+ *   rounded once, and added on top. Prices do not include it.
  * - The total is the sub-total, less the discount, plus the GST.
- *
- * The discount is shared out in proportion to the lines, and whatever cents rounding leaves over
- * go to the biggest line, so the shares always come to the discount shown.
  *
  * For an invoice use `$invoice->totals()`, which gives an issued invoice its stored figures.
  */
 final readonly class InvoiceTotals
 {
     /**
-     * @param  list<Money>  $lineDiscounts  each line's share of the discount, in the lines' order
-     * @param  list<Money>  $lineGst  the GST on each line
+     * @param  int  $gstRate  the basis points the GST was charged at, 0 for none
      */
     public function __construct(
         public Money $subtotal,
         public Money $discount,
         public Money $gst,
         public Money $total,
-        public array $lineDiscounts = [],
-        public array $lineGst = [],
+        public int $gstRate = 0,
     ) {}
 
     /**
-     * Calculated from the invoice's lines and discount as they are now, stored totals or not.
+     * Calculated from the invoice's lines and discount as they are now, stored totals or not, at
+     * the GST rate given or else the one in force today.
      */
-    public static function of(Invoice $invoice): self
+    public static function of(Invoice $invoice, ?int $gstRate = null): self
     {
-        return self::calculate($invoice->lines()->get()->all(), $invoice->discount);
+        return self::calculate($invoice->lines()->get()->all(), $invoice->discount, $gstRate ?? Gst::rate());
     }
 
     /**
      * @param  list<InvoiceLine>  $lines
      * @param  int  $discountRate  basis points of the sub-total
+     * @param  int  $gstRate  basis points of what is left after the discount
      */
-    public static function calculate(array $lines, int $discountRate = 0): self
+    public static function calculate(array $lines, int $discountRate = 0, int $gstRate = 0): self
     {
-        $lineTotals = array_map(fn (InvoiceLine $line) => $line->total(), $lines);
-        $subtotal = Money::sum($lineTotals);
+        $subtotal = Money::sum(array_map(fn (InvoiceLine $line) => $line->total(), $lines));
         $discount = $subtotal->rate($discountRate);
+        $gst = $subtotal->subtract($discount)->rate($gstRate);
 
-        $shares = array_map(fn (Money $total) => $total->rate($discountRate), $lineTotals);
-        $left = $discount->subtract(Money::sum($shares));
+        return new self($subtotal, $discount, $gst, $subtotal->subtract($discount)->add($gst), $gstRate);
+    }
 
-        if (! $left->isZero()) {
-            $biggest = 0;
-
-            foreach ($lineTotals as $index => $total) {
-                if (abs($total->inCents()) > abs($lineTotals[$biggest]->inCents())) {
-                    $biggest = $index;
-                }
-            }
-
-            $shares[$biggest] = $shares[$biggest]->add($left);
-        }
-
-        $lineGst = [];
-
-        foreach ($lines as $index => $line) {
-            $lineGst[] = $lineTotals[$index]->subtract($shares[$index])->rate($line->gst_rate);
-        }
-
-        $gst = Money::sum($lineGst);
-
-        return new self($subtotal, $discount, $gst, $subtotal->subtract($discount)->add($gst), $shares, $lineGst);
+    /**
+     * Whether GST was charged. An invoice that charges none must say so to the client.
+     */
+    public function chargesGst(): bool
+    {
+        return $this->gstRate > 0;
     }
 }

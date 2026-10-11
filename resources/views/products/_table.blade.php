@@ -1,7 +1,6 @@
 {{--
     The product table and its paging. Sent alone when htmx asks for #product-table.
     Its sort and paging links are boosted: they swap this element and push the URL.
-    $gst: whether GST is on. With it off nothing here mentions GST.
     The tick boxes choose the products for the Update prices button on the page.
 --}}
 @php
@@ -49,9 +48,6 @@
                             @unless ($product->active)
                                 <span class="badge bg-secondary ms-1">Inactive</span>
                             @endunless
-                            @if ($gst && $product->gst_free)
-                                <span class="badge bg-info ms-1">GST-free</span>
-                            @endif
                         </td>
                         <td>{{ $product->category->name }}</td>
                         <td class="text-end text-nowrap">{{ $product->price->format() }}</td>

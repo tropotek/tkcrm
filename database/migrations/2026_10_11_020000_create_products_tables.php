@@ -30,8 +30,6 @@ return new class extends Migration
             $table->integer('price')->default(0);
             // App\Enums\Cycle: the cycle a recurring item for this product starts with.
             $table->string('cycle', 16)->default('each');
-            // No GST is charged on it even while GST is on.
-            $table->boolean('gst_free')->default(false);
             $table->text('description')->nullable();
             $table->text('notes')->nullable();
             $table->boolean('active')->default(true);

@@ -62,8 +62,8 @@ class TaskBillingTest extends TestCase
 
         $this->assertSame([$this->client->id, true], [$invoice->company_id, $invoice->isOpen()]);
         $this->assertSame(
-            [$invoice->id, "TSK-{$task->id}", 'Build the order form — 1h 40m', '1', 25000, 0],
-            [$line->invoice_id, $line->product_code, $line->description, $line->quantity, $line->unit_price->inCents(), $line->gst_rate],
+            [$invoice->id, "TSK-{$task->id}", 'Build the order form — 1h 40m', '1', 25000],
+            [$line->invoice_id, $line->product_code, $line->description, $line->quantity, $line->unit_price->inCents()],
         );
         $this->assertTrue($line->source->is($task));
         $this->assertSame(

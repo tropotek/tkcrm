@@ -83,7 +83,6 @@ class DatabaseSeederTest extends TestCase
         $this->assertSame(Cycle::Each, $labour->cycle);
 
         $this->assertSame(Cycle::Biannual, Product::where('code', 'DOM-AU')->sole()->cycle);
-        $this->assertSame(['DOM-COM'], Product::where('gst_free', true)->pluck('code')->all());
         $this->assertSame(['HOST-OLD'], Product::where('active', false)->pluck('code')->all());
     }
 

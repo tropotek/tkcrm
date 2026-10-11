@@ -27,14 +27,14 @@ class ProductSchemaTest extends TestCase
 
         $this->assertEqualsCanonicalizing(
             [
-                'id', 'product_category_id', 'name', 'code', 'price', 'cycle', 'gst_free', 'description', 'notes',
+                'id', 'product_category_id', 'name', 'code', 'price', 'cycle', 'description', 'notes',
                 'active', 'created_at', 'updated_at',
             ],
             Schema::getColumnListing('products'),
         );
     }
 
-    public function test_a_new_product_is_active_one_off_free_and_charged_gst(): void
+    public function test_a_new_product_is_active_one_off_and_free(): void
     {
         $category = ProductCategory::create(['name' => 'Labour']);
         $product = Product::create(['product_category_id' => $category->id, 'name' => 'Labour', 'code' => 'LAB']);
@@ -42,7 +42,6 @@ class ProductSchemaTest extends TestCase
         foreach ([$product, $product->fresh()] as $read) {
             $this->assertTrue($read->price->isZero());
             $this->assertSame(Cycle::Each, $read->cycle);
-            $this->assertFalse($read->gst_free);
             $this->assertTrue($read->active);
         }
 
@@ -57,7 +56,6 @@ class ProductSchemaTest extends TestCase
         $product = Product::sole();
         $this->assertTrue($product->price->isZero());
         $this->assertSame(Cycle::Each, $product->cycle);
-        $this->assertFalse($product->gst_free);
         $this->assertTrue($product->active);
     }
 
@@ -99,12 +97,6 @@ class ProductSchemaTest extends TestCase
 
         $this->assertFalse(Cycle::Each->recurs());
         $this->assertSame(6, count(array_filter(Cycle::cases(), fn (Cycle $cycle) => $cycle->recurs())));
-    }
-
-    public function test_the_gst_free_flag_is_kept(): void
-    {
-        $this->assertTrue(Product::factory()->gstFree()->create()->fresh()->gst_free);
-        $this->assertFalse(Product::factory()->create()->fresh()->gst_free);
     }
 
     public function test_two_products_cannot_share_a_code(): void

@@ -27,6 +27,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property ?CarbonImmutable $due_on
  * @property ?CarbonImmutable $paid_on
  * @property ?CarbonImmutable $cancelled_on
+ * @property ?int $gst_rate basis points charged on the whole invoice, set at issue
  * @property ?Money $subtotal
  * @property ?Money $discount_total
  * @property ?Money $gst_total
@@ -53,6 +54,7 @@ class Invoice extends Model
         return [
             'number' => 'integer',
             'discount' => 'integer',
+            'gst_rate' => 'integer',
             'issued_on' => 'immutable_date',
             'due_on' => 'immutable_date',
             'paid_on' => 'immutable_date',
@@ -139,12 +141,13 @@ class Invoice extends Model
 
     /**
      * Its sub-total, discount, GST and total. Once issued these are the stored figures, whatever
-     * has happened to its lines or to prices since; until then they are worked out from its lines.
+     * has happened to its lines, to prices or to the GST setting since. Until then they are worked
+     * out from its lines, with GST at the rate in force today.
      */
     public function totals(): InvoiceTotals
     {
         return $this->total !== null
-            ? new InvoiceTotals($this->subtotal, $this->discount_total, $this->gst_total, $this->total)
+            ? new InvoiceTotals($this->subtotal, $this->discount_total, $this->gst_total, $this->total, $this->gst_rate ?? 0)
             : InvoiceTotals::of($this);
     }
 }
