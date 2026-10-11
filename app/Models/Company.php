@@ -73,6 +73,14 @@ class Company extends Model
         return $this->hasMany(Project::class);
     }
 
+    /**
+     * @return HasMany<Task, $this>
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
+
     public function isClient(): bool
     {
         return $this->type === CompanyType::Client;

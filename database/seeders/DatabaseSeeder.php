@@ -4,10 +4,14 @@ namespace Database\Seeders;
 
 use App\Enums\CompanyType;
 use App\Enums\Cycle;
+use App\Enums\TaskPriority;
 use App\Models\Company;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Project;
+use App\Models\Task;
+use App\Models\TaskCategory;
+use App\Models\TaskLog;
 use App\Models\User;
 use App\Notifications\Notice;
 use Illuminate\Database\Seeder;
@@ -36,6 +40,7 @@ class DatabaseSeeder extends Seeder
         $this->companies();
         $this->products();
         $this->projects();
+        $this->tasks();
     }
 
     /**
@@ -108,6 +113,56 @@ class DatabaseSeeder extends Seeder
 
             if ($company && ! Project::where('name', $name)->exists()) {
                 Project::factory()->for($company)->create(['name' => $name, 'quote' => $quote] + $dates);
+            }
+        }
+    }
+
+    /**
+     * Task categories, and a few tasks with time logged on them, found again by subject.
+     */
+    private function tasks(): void
+    {
+        foreach (['Development', 'Support', 'Administration'] as $position => $name) {
+            TaskCategory::firstOrCreate(['name' => $name], ['position' => $position]);
+        }
+
+        $labour = Product::where('code', 'LAB')->first();
+        $afterHours = Product::where('code', 'LAB-AH')->first();
+
+        // Client, project, category, subject, priority, estimated minutes, status, then logs of [product, days ago, minutes, billable].
+        $tasks = [
+            ['Wattle Creek Bakery', 'Online ordering', 'Development', 'Build the order form', TaskPriority::High, 600, 'open', [[$labour, 6, 180, true], [$labour, 5, 240, true], [$afterHours, 3, 90, true]]],
+            ['Wattle Creek Bakery', 'Online ordering', 'Development', 'Connect the payment gateway', TaskPriority::Medium, 480, 'open', []],
+            ['Wattle Creek Bakery', null, 'Support', 'Fix the opening hours on the contact page', TaskPriority::Low, 30, 'closed', [[$labour, 20, 25, true]]],
+            ['Ironbark Surveying', null, 'Support', 'Restore a deleted mailbox', TaskPriority::None, 0, 'open', [[$labour, 2, 45, true], [$labour, 2, 20, false]]],
+            ['Saltbush Yoga Studio', 'Class booking app', 'Development', 'Timetable import', TaskPriority::None, 240, 'cancelled', []],
+        ];
+
+        foreach ($tasks as [$client, $project, $category, $subject, $priority, $estimate, $status, $logs]) {
+            $company = Company::where('name', $client)->first();
+
+            if (! $company || ! $labour || Task::where('subject', $subject)->exists()) {
+                continue;
+            }
+
+            $task = Task::factory()
+                ->when($status === 'closed', fn ($factory) => $factory->closed())
+                ->when($status === 'cancelled', fn ($factory) => $factory->cancelled())
+                ->create([
+                    'company_id' => $company->id,
+                    'project_id' => $project ? Project::where('name', $project)->value('id') : null,
+                    'task_category_id' => TaskCategory::where('name', $category)->value('id'),
+                    'subject' => $subject,
+                    'priority' => $priority,
+                    'estimated_minutes' => $estimate,
+                ]);
+
+            foreach ($logs as [$product, $daysAgo, $minutes, $billable]) {
+                TaskLog::factory()->for($task)->for($product)->create([
+                    'started_at' => now()->subDays($daysAgo)->setTime(9, 0),
+                    'minutes' => $minutes,
+                    'billable' => $billable,
+                ]);
             }
         }
     }

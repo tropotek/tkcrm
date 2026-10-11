@@ -71,6 +71,7 @@ class Product extends Model
      */
     public function isInUse(): bool
     {
-        return Settings::get('default_labour_product_id') === $this->id;
+        return Settings::get('default_labour_product_id') === $this->id
+            || TaskLog::where('product_id', $this->id)->exists();
     }
 }

@@ -138,6 +138,37 @@ class MoneyTest extends TestCase
     }
 
     /**
+     * @return array<string, array{int, int, int}>
+     */
+    public static function divisions(): array
+    {
+        return [
+            'evenly' => [9000, 60, 150],
+            'by one' => [1234, 1, 1234],
+            'exactly half a cent rounds up' => [90, 60, 2],
+            'half a cent in a longer sum' => [270150, 60, 4503],
+            'just under half a cent rounds down' => [89, 60, 1],
+            'a third rounds down' => [100, 3, 33],
+            'two thirds rounds up' => [200, 3, 67],
+            'nothing' => [0, 60, 0],
+            'a negative amount rounds half away from zero' => [-90, 60, -2],
+        ];
+    }
+
+    #[DataProvider('divisions')]
+    public function test_it_divides_into_equal_parts_rounding_half_up_to_the_cent(int $cents, int $parts, int $expected): void
+    {
+        $this->assertSame($expected, Money::cents($cents)->divide($parts)->inCents());
+    }
+
+    public function test_it_cannot_be_divided_into_no_parts(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        Money::cents(100)->divide(0);
+    }
+
+    /**
      * @return array<string, array{int, string, string}>
      */
     public static function formats(): array

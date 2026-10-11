@@ -114,6 +114,21 @@ final readonly class Money implements JsonSerializable, Stringable
     }
 
     /**
+     * This amount split into a number of equal parts, giving one part: an hourly rate times
+     * minutes, divided by 60.
+     *
+     * @throws InvalidArgumentException
+     */
+    public function divide(int $parts): self
+    {
+        if ($parts === 0) {
+            throw new InvalidArgumentException('An amount cannot be divided into no parts.');
+        }
+
+        return new self(self::round(bcdiv((string) $this->cents, (string) $parts, 20)));
+    }
+
+    /**
      * This amount at a rate in basis points: 1000 is 10% of it.
      */
     public function rate(int $basisPoints): self

@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Product;
+use App\Models\TaskLog;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -130,6 +131,23 @@ class ProductPriceUpdateTest extends TestCase
             ->assertSessionHas('success', 'The prices of 2 products were raised by 5%.');
 
         $this->assertSame(['LAB' => 9450, 'HOST' => 34661, 'DOM' => 4500], $this->prices());
+    }
+
+    public function test_time_already_logged_keeps_the_rate_it_was_logged_at(): void
+    {
+        $log = TaskLog::factory()->for($this->labour)->create(['minutes' => 90]);
+        $this->assertSame(9000, $log->rate->inCents());
+
+        $this->actingAs($this->user)
+            ->put('/products/prices', ['ids' => $this->ids(), 'percentage' => '10', 'previewed' => '1000'], self::DIALOG)
+            ->assertNoContent();
+
+        $this->assertSame(9900, $this->labour->fresh()->price->inCents());
+        $this->assertSame(9000, $log->fresh()->rate->inCents());
+        $this->assertSame(13500, $log->fresh()->amount()->inCents());
+
+        // Time logged after the change is at the new price.
+        $this->assertSame(9900, TaskLog::factory()->for($this->labour->fresh())->create()->rate->inCents());
     }
 
     public function test_prices_can_be_lowered_and_one_product_is_worded_as_one(): void

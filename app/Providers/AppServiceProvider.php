@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use App\Models\Task;
+use App\Models\TaskLog;
 use App\Support\Owner;
 use App\Support\Settings;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -30,7 +32,8 @@ class AppServiceProvider extends ServiceProvider
         // The names records are stored under in polymorphic columns (attachments, and later invoice line
         // sources and the mail log). A model that takes attachments must be listed here.
         Relation::morphMap([
-            //
+            'task' => Task::class,
+            'task_log' => TaskLog::class,
         ]);
     }
 }

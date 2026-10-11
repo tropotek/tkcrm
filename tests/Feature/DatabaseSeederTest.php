@@ -5,10 +5,14 @@ namespace Tests\Feature;
 use App\Enums\CompanyType;
 use App\Enums\Cycle;
 use App\Enums\ProjectStatus;
+use App\Enums\TaskStatus;
 use App\Models\Company;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Project;
+use App\Models\Task;
+use App\Models\TaskCategory;
+use App\Models\TaskLog;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -116,6 +120,25 @@ class DatabaseSeederTest extends TestCase
         $this->assertSame(2, Company::where('name', 'Wattle Creek Bakery')->sole()->projects()->count());
     }
 
+    public function test_it_makes_tasks_of_each_status_with_time_logged_however_often_it_is_seeded(): void
+    {
+        $this->runSeeder();
+        $this->runSeeder();
+
+        $this->assertSame(['Development', 'Support', 'Administration'], TaskCategory::ordered()->pluck('name')->all());
+        $this->assertSame(5, Task::count());
+        $this->assertSame(6, TaskLog::count());
+        $this->assertEqualsCanonicalizing(
+            TaskStatus::cases(),
+            Task::get()->map(fn (Task $task) => $task->status())->unique()->values()->all(),
+        );
+
+        $form = Task::where('subject', 'Build the order form')->sole();
+        $this->assertSame('Online ordering', $form->project->name);
+        $this->assertSame([9000, 9000, 13500], $form->logs->map(fn (TaskLog $log) => $log->rate->inCents())->all());
+        $this->assertSame(1, TaskLog::where('billable', false)->count());
+    }
+
     public function test_it_seeds_nothing_in_production(): void
     {
         $this->app['env'] = 'production';
@@ -126,5 +149,7 @@ class DatabaseSeederTest extends TestCase
         $this->assertSame(0, Company::count());
         $this->assertSame(0, Product::count());
         $this->assertSame(0, Project::count());
+        $this->assertSame(0, Task::count());
+        $this->assertSame(0, TaskCategory::count());
     }
 }
