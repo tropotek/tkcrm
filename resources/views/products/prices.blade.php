@@ -27,8 +27,9 @@
                 </div>
             </div>
             <div class="col-sm-7 form-text">
-                A positive percentage raises the prices and a negative one lowers them. Invoices already issued and
-                time already logged keep the price they were made at.
+                A positive percentage raises the prices. A negative one takes that rise back: -8 undoes an earlier 8,
+                so it is a little less than 8% off. Invoices already issued and time already logged keep the price
+                they were made at.
             </div>
         </div>
 

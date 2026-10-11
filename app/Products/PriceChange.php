@@ -6,11 +6,12 @@ use App\Support\BasisPoints;
 use App\Support\Money;
 
 /**
- * A change of price by a percentage: up for a positive one, down for a negative one.
+ * A change of price by a percentage: up for a positive one, and back down for a negative one.
  *
- * The new price is the old one plus or minus that percentage of it, rounded half up to the cent.
- * So 10% up and then 10% down does not come back to where it started. tktask's dialog instead
- * divided by 1.1 for "-10", which undid a 10% rise; that is not done here.
+ * A rise adds that percentage of the price, rounded half up to the cent. A negative percentage
+ * undoes a rise of the same size: -8 divides by 1.08, as tktask's dialog did, so 8 followed by -8
+ * always comes back to the cent it started from. It is therefore a little less than 8% off
+ * (about 7.41%); the dialog shows each new price before anything is saved.
  */
 final readonly class PriceChange
 {
@@ -44,7 +45,9 @@ final readonly class PriceChange
 
     public function apply(Money $price): Money
     {
-        return $price->add($price->rate($this->basisPoints));
+        return $this->basisPoints < 0
+            ? $price->multiply(10000)->divide(10000 - $this->basisPoints)
+            : $price->add($price->rate($this->basisPoints));
     }
 
     public function isNothing(): bool
@@ -53,10 +56,12 @@ final readonly class PriceChange
     }
 
     /**
-     * "raised by 5%", "lowered by 2.5%".
+     * "raised by 5%", "lowered, undoing a rise of 2.5%".
      */
     public function describe(): string
     {
-        return ($this->basisPoints < 0 ? 'lowered' : 'raised').' by '.BasisPoints::format(abs($this->basisPoints));
+        $percentage = BasisPoints::format(abs($this->basisPoints));
+
+        return $this->basisPoints < 0 ? "lowered, undoing a rise of {$percentage}" : "raised by {$percentage}";
     }
 }

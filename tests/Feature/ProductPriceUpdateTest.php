@@ -106,7 +106,7 @@ class ProductPriceUpdateTest extends TestCase
         $this->actingAs($this->user)
             ->post('/products/prices/preview', ['ids' => $this->ids(), 'percentage' => '-10'])
             ->assertSee('name="previewed" value="-1000"', false)
-            ->assertSeeInOrder(['$90.00', '$81.00', '$330.10', '$297.09']);
+            ->assertSeeInOrder(['$90.00', '$81.82', '$330.10', '$300.09']);
 
         $this->assertSame(['LAB' => 9000, 'HOST' => 33010, 'DOM' => 4500], $this->prices());
     }
@@ -155,9 +155,26 @@ class ProductPriceUpdateTest extends TestCase
         $this->actingAs($this->user)
             ->put('/products/prices', ['ids' => [$this->labour->id], 'percentage' => '-2.5', 'previewed' => '-250'], self::DIALOG)
             ->assertNoContent()
-            ->assertSessionHas('success', 'The price of 1 product was lowered by 2.5%.');
+            ->assertSessionHas('success', 'The price of 1 product was lowered, undoing a rise of 2.5%.');
 
-        $this->assertSame(['LAB' => 8775, 'HOST' => 33010, 'DOM' => 4500], $this->prices());
+        // 9000 / 1.025 is 8780.49.
+        $this->assertSame(['LAB' => 8780, 'HOST' => 33010, 'DOM' => 4500], $this->prices());
+    }
+
+    public function test_a_rise_saved_and_then_taken_back_leaves_every_price_where_it_was(): void
+    {
+        $before = $this->prices();
+
+        $this->actingAs($this->user)
+            ->put('/products/prices', ['ids' => $this->ids(), 'percentage' => '8', 'previewed' => '800'], self::DIALOG)
+            ->assertNoContent();
+        $this->assertNotSame($before, $this->prices());
+
+        $this->actingAs($this->user)
+            ->put('/products/prices', ['ids' => $this->ids(), 'percentage' => '-8', 'previewed' => '-800'], self::DIALOG)
+            ->assertNoContent();
+
+        $this->assertSame($before, $this->prices());
     }
 
     public function test_prices_the_dialog_has_not_shown_are_not_saved_but_shown(): void
