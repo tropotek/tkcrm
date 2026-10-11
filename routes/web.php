@@ -38,6 +38,9 @@ Route::middleware('auth')->group(function () {
 
     // POST finds or starts a client's open invoice.
     Route::resource('invoices', InvoiceController::class)->except('create');
+    Route::post('/invoices/{invoice}/issue', [InvoiceController::class, 'issue'])->name('invoices.issue');
+    Route::post('/invoices/{invoice}/reopen', [InvoiceController::class, 'reopen'])->name('invoices.reopen');
+    Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');
     Route::resource('invoices.lines', InvoiceLineController::class)->shallow()->except('index', 'show');
 
     // A task is never deleted: it is cancelled.

@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Enums\InvoiceStatus;
+use App\Facades\Settings;
+use App\Invoices\InvoiceNumber;
 use App\Invoices\InvoiceTotals;
 use App\Support\LocalTime;
 use App\Support\Money;
@@ -16,6 +18,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
+use LogicException;
 
 /**
  * What a client is billed.
@@ -172,6 +176,114 @@ class Invoice extends Model
         return $this->total !== null
             ? new InvoiceTotals($this->subtotal, $this->discount_total, $this->gst_total, $this->total, $this->gst_rate ?? 0)
             : InvoiceTotals::of($this);
+    }
+
+    /**
+     * Why it cannot be issued, or null when it can: it must be open, with something on it that
+     * comes to more than nothing.
+     */
+    public function issueProblem(): ?string
+    {
+        return match (true) {
+            ! $this->isOpen() => 'Only an open invoice can be issued.',
+            ! $this->lines()->exists() => 'There is nothing on this invoice to issue.',
+            ! InvoiceTotals::of($this)->total->isPositive() => 'An invoice that comes to nothing cannot be issued.',
+            default => null,
+        };
+    }
+
+    /**
+     * Issue the invoice, which freezes it: it takes its number (a re-opened invoice keeps the one
+     * it had), today as its issue date, a due date the configured days later, the client's address
+     * if it has none of its own, and the GST rate in force with the totals that gives. From here
+     * on everything reads those stored figures.
+     *
+     * Nothing is sent. Whoever calls this decides whether the client is emailed.
+     */
+    public function issue(): void
+    {
+        if ($problem = $this->issueProblem()) {
+            throw new LogicException($problem);
+        }
+
+        DB::transaction(function () {
+            // First, so that this transaction holds the write lock before it reads anything.
+            $number = $this->number ?? InvoiceNumber::allocate();
+            $totals = InvoiceTotals::of($this);
+            $today = CarbonImmutable::parse(self::day(null));
+
+            $this->forceFill([
+                'number' => $number,
+                'issued_on' => $today,
+                'due_on' => $today->addDays((int) Settings::get('overdue_days')),
+                'billing_address' => $this->billing_address ?? $this->company->address,
+                'gst_rate' => $totals->gstRate,
+                'subtotal' => $totals->subtotal,
+                'discount_total' => $totals->discount,
+                'gst_total' => $totals->gst,
+                'total' => $totals->total,
+            ])->save();
+        });
+    }
+
+    /**
+     * Why it cannot be re-opened, or null when it can: it must be issued and unpaid, with no
+     * payment against it.
+     */
+    public function reopenProblem(): ?string
+    {
+        return match (true) {
+            $this->status() !== InvoiceStatus::Unpaid => 'Only an unpaid invoice can be re-opened.',
+            $this->payments()->exists() => 'This invoice has a payment against it, so it cannot be re-opened.',
+            default => null,
+        };
+    }
+
+    /**
+     * Open the invoice again to correct it. Its stored totals, GST rate and dates go, and it is
+     * worked out from its lines once more. It keeps its number, so the corrected invoice replaces
+     * the one that was sent.
+     */
+    public function reopen(): void
+    {
+        if ($problem = $this->reopenProblem()) {
+            throw new LogicException($problem);
+        }
+
+        $this->forceFill([
+            'issued_on' => null,
+            'due_on' => null,
+            'gst_rate' => null,
+            'subtotal' => null,
+            'discount_total' => null,
+            'gst_total' => null,
+            'total' => null,
+        ])->save();
+    }
+
+    /**
+     * Why it cannot be cancelled, or null when it can: it must be issued and unpaid, with no
+     * payment against it. An open invoice is changed or deleted instead.
+     */
+    public function cancelProblem(): ?string
+    {
+        return match (true) {
+            $this->status() !== InvoiceStatus::Unpaid => 'Only an unpaid invoice can be cancelled.',
+            $this->payments()->exists() => 'This invoice has a payment against it, so it cannot be cancelled.',
+            default => null,
+        };
+    }
+
+    /**
+     * Cancel the invoice. It keeps its number and its stored totals, as a record of what was sent.
+     */
+    public function cancel(): void
+    {
+        if ($problem = $this->cancelProblem()) {
+            throw new LogicException($problem);
+        }
+
+        $this->forceFill(['cancelled_on' => self::day(null)])->save();
     }
 
     private static function day(?DateTimeInterface $on): string

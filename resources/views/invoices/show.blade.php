@@ -1,7 +1,8 @@
 {{--
     An invoice's own page: who it is for, its lines and totals, its payments, and the client's
     other unpaid invoices. While it is open its details and lines are changed in the shared dialog;
-    once issued it is read-only here.
+    once issued it is read-only here, until it is re-opened, which only an unpaid invoice with no
+    payment can be.
     $totals: its App\Invoices\InvoiceTotals, stored once issued and worked out from the lines until then.
     $unpaid: the client's other unpaid invoices.
     A line made from a task is changed by re-opening the task, so it has no buttons.
@@ -19,7 +20,25 @@
     <x-slot:actions>
         @if ($open)
             <button type="button" class="btn btn-light" hx-get="{{ route('invoices.edit', $invoice) }}" hx-target="#app-modal-content"><i class="ri-pencil-line me-1"></i>Edit details</button>
-            <button type="button" class="btn btn-primary" hx-get="{{ route('invoices.lines.create', $invoice) }}" hx-target="#app-modal-content"><i class="ri-add-line me-1"></i>Add line</button>
+            <button type="button" class="btn btn-light" hx-get="{{ route('invoices.lines.create', $invoice) }}" hx-target="#app-modal-content"><i class="ri-add-line me-1"></i>Add line</button>
+            @if ($invoice->lines->isNotEmpty())
+                <form method="POST" action="{{ route('invoices.issue', $invoice) }}" class="d-inline"
+                    onsubmit="return confirm('Issue this invoice for {{ $totals->total->format() }}? It gets its number and can no longer be changed. Nothing is sent to the client.')">
+                    @csrf
+                    <button type="submit" class="btn btn-primary"><i class="ri-send-plane-line me-1"></i>Issue</button>
+                </form>
+            @endif
+        @elseif ($status === App\Enums\InvoiceStatus::Unpaid && $invoice->payments->isEmpty())
+            <form method="POST" action="{{ route('invoices.reopen', $invoice) }}" class="d-inline"
+                onsubmit="return confirm('Re-open this invoice to change it? It keeps its number, and must be issued again.')">
+                @csrf
+                <button type="submit" class="btn btn-light"><i class="ri-restart-line me-1"></i>Re-open</button>
+            </form>
+            <form method="POST" action="{{ route('invoices.cancel', $invoice) }}" class="d-inline"
+                onsubmit="return confirm('Cancel this invoice? It keeps its number and cannot be brought back.')">
+                @csrf
+                <button type="submit" class="btn btn-outline-danger">Cancel invoice</button>
+            </form>
         @endif
     </x-slot:actions>
 

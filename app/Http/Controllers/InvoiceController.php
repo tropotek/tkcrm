@@ -81,6 +81,48 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Issuing freezes the invoice. It sends nothing: emailing the client is a separate step.
+     */
+    public function issue(Invoice $invoice): RedirectResponse
+    {
+        $back = redirect()->route('invoices.show', $invoice);
+
+        if ($problem = $invoice->issueProblem()) {
+            return $back->with('error', $problem);
+        }
+
+        $invoice->issue();
+
+        return $back->with('success', "Invoice {$invoice->number} issued for {$invoice->total->format()}, due {$invoice->due_on->format('j M Y')}. Nothing has been sent to the client.");
+    }
+
+    public function reopen(Invoice $invoice): RedirectResponse
+    {
+        $back = redirect()->route('invoices.show', $invoice);
+
+        if ($problem = $invoice->reopenProblem()) {
+            return $back->with('error', $problem);
+        }
+
+        $invoice->reopen();
+
+        return $back->with('success', "Invoice {$invoice->number} re-opened. It keeps its number, and can be changed and issued again.");
+    }
+
+    public function cancel(Invoice $invoice): RedirectResponse
+    {
+        $back = redirect()->route('invoices.show', $invoice);
+
+        if ($problem = $invoice->cancelProblem()) {
+            return $back->with('error', $problem);
+        }
+
+        $invoice->cancel();
+
+        return $back->with('success', "Invoice {$invoice->number} cancelled.");
+    }
+
+    /**
      * Only an open invoice with nothing on it can go: one with lines has work behind it.
      */
     public function destroy(Invoice $invoice): RedirectResponse
