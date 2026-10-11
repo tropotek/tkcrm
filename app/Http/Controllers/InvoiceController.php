@@ -6,6 +6,7 @@ use App\Enums\InvoiceStatus;
 use App\Http\Requests\InvoiceRequest;
 use App\Invoices\InvoicePdf;
 use App\Invoices\InvoiceSearch;
+use App\Invoices\TaskListPdf;
 use App\Models\Company;
 use App\Models\Invoice;
 use Illuminate\Http\RedirectResponse;
@@ -54,6 +55,7 @@ class InvoiceController extends Controller
 
         return view('invoices.show', [
             'invoice' => $invoice,
+            'hasTaskList' => app(TaskListPdf::class)->has($invoice),
             'totals' => $invoice->totals(),
             'unpaid' => $invoice->company->invoices()->withStatus(InvoiceStatus::Unpaid)->whereKeyNot($invoice->id)
                 ->orderBy('issued_on')->orderBy('id')->get(),
@@ -74,6 +76,23 @@ class InvoiceController extends Controller
      */
     public function pdf(Request $request, Invoice $invoice, InvoicePdf $document): Response
     {
+        $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+
+        return response($document->pdf($invoice), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "{$disposition}; filename=\"{$document->filename($invoice)}\"",
+            'Cache-Control' => 'private, no-store',
+        ]);
+    }
+
+    /**
+     * The tasks and time behind the invoice's lines, as a PDF. There is none for an invoice with
+     * no line that came from a task.
+     */
+    public function taskList(Request $request, Invoice $invoice, TaskListPdf $document): Response
+    {
+        abort_unless($document->has($invoice), 404);
+
         $disposition = $request->boolean('download') ? 'attachment' : 'inline';
 
         return response($document->pdf($invoice), 200, [

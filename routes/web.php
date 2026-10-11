@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('invoices', InvoiceController::class)->except('create');
     Route::get('/invoices/{invoice}/preview', [InvoiceController::class, 'preview'])->name('invoices.preview');
     Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'pdf'])->name('invoices.pdf');
+    Route::get('/invoices/{invoice}/task-list', [InvoiceController::class, 'taskList'])->name('invoices.task-list');
     Route::post('/invoices/{invoice}/issue', [InvoiceController::class, 'issue'])->name('invoices.issue');
     Route::post('/invoices/{invoice}/reopen', [InvoiceController::class, 'reopen'])->name('invoices.reopen');
     Route::get('/invoices/{invoice}/cancel', [InvoiceController::class, 'confirmCancel'])->name('invoices.cancel.confirm');

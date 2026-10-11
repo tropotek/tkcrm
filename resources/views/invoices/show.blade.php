@@ -5,6 +5,7 @@
     payment can be.
     $totals: its App\Invoices\InvoiceTotals, stored once issued and worked out from the lines until then.
     $unpaid: the client's other unpaid invoices.
+    $hasTaskList: it has lines that came from tasks, so there is a task list PDF to go with it.
     A line made from a task is changed by re-opening the task, so it has no buttons.
 --}}
 @php
@@ -21,6 +22,9 @@
         @if ($invoice->lines->isNotEmpty())
             <a href="{{ route('invoices.preview', $invoice) }}" target="_blank" rel="noopener" class="btn btn-light" title="As the client will see it"><i class="ri-eye-line me-1"></i>Preview</a>
             <a href="{{ route('invoices.pdf', $invoice) }}" target="_blank" rel="noopener" class="btn btn-light"><i class="ri-file-pdf-2-line me-1"></i>{{ $open ? 'Draft PDF' : 'PDF' }}</a>
+            @if ($hasTaskList)
+                <a href="{{ route('invoices.task-list', $invoice) }}" target="_blank" rel="noopener" class="btn btn-light" title="The tasks and time behind its lines, for the client"><i class="ri-list-check-2 me-1"></i>Task list</a>
+            @endif
         @endif
         @if ($open)
             <button type="button" class="btn btn-light" hx-get="{{ route('invoices.edit', $invoice) }}" hx-target="#app-modal-content"><i class="ri-pencil-line me-1"></i>Edit details</button>

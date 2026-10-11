@@ -4,12 +4,11 @@ namespace App\Invoices;
 
 use App\Models\Invoice;
 use App\Support\Owner;
-use Dompdf\Dompdf;
-use Dompdf\Options;
+use App\Support\Pdf;
 
 /**
  * An invoice as a document: the HTML the on-screen preview shows, and the same HTML made into a
- * PDF in-process by dompdf, which fetches nothing over the network and runs no script.
+ * PDF (App\Support\Pdf).
  *
  * It prints what `$invoice->totals()` gives and works nothing out of its own, so an issued
  * invoice always prints its stored figures.
@@ -20,29 +19,7 @@ class InvoicePdf
 
     public function pdf(Invoice $invoice): string
     {
-        $dirs = storage_path('framework/cache/dompdf');
-
-        if (! is_dir($dirs)) {
-            mkdir($dirs, 0775, true);
-        }
-
-        $dompdf = new Dompdf(new Options([
-            'isRemoteEnabled' => false,
-            'isJavascriptEnabled' => false,
-            'isPhpEnabled' => false,
-            'fontDir' => $dirs,
-            'fontCache' => $dirs,
-            'tempDir' => $dirs,
-            'defaultFont' => 'DejaVu Sans',
-        ]));
-        $dompdf->setPaper('A4');
-        $dompdf->loadHtml($this->html($invoice));
-        $dompdf->render();
-
-        $footer = "{$this->owner->name()} · {$this->title($invoice)} · Page {PAGE_NUM} of {PAGE_COUNT}";
-        $dompdf->getCanvas()->page_text(36, 810, $footer, $dompdf->getFontMetrics()->getFont('DejaVu Sans'), 8, [0.45, 0.45, 0.45]);
-
-        return (string) $dompdf->output();
+        return Pdf::render($this->html($invoice), "{$this->owner->name()} · {$this->title($invoice)} · Page {PAGE_NUM} of {PAGE_COUNT}");
     }
 
     /**
