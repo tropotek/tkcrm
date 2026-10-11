@@ -72,7 +72,9 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 
 ## Conventions
 
-- Money is never a float. Amounts are stored as integer cents, and rates and quantities as integers or decimal strings, calculated with BCMath (task 20 adds the money support).
+- Money is never a float. An amount is an `App\Support\Money` (whole cents), stored in an integer column through `App\Casts\MoneyCast`. `Money::parse()` reads what a person typed, `->format()` gives `$1,234.50` for a page or PDF, and `->toDecimal()` gives `1234.50` for a form field or the API. Validate a money field with `new App\Rules\MoneyAmount`.
+- A quantity is a whole number or a decimal string, never a float: `$price->multiply('1.25')`. A rate is basis points: `$amount->rate(1000)` is 10% of it, and `App\Support\BasisPoints` converts to and from a percentage. Both round half up to the cent (half a cent goes away from zero).
+- Do sums on cents or with BCMath. Never use `round()`, `floatval()`, `number_format()` on an amount, or a `decimal`/`float` column for money.
 - An issued invoice stores its totals. Nothing recalculates them from the lines afterwards.
 - Nothing is issued or emailed to a client without the owner's click.
 - Invoice totals, GST, cycle dates and the profit and loss are written test-first.
@@ -92,7 +94,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - Dates are stored in UTC and shown in the reader's timezone. In a view use `<x-date :value="…" />` (it takes a `format`); elsewhere use `App\Support\LocalTime::of($date)`. Never format a stored date directly.
 - A user's photo is on the private `local` disk under `photos/` and is sent by `ProfileController::photo` to that user only. Use `$user->photoUrl()` for its address.
 - Settings the owner can change are read with `App\Facades\Settings::get('key')`. Every key, its default, type and validation rules are in `App\Support\Settings::definitions()`; a new setting is added there and to `settings/edit.blade.php`. An unknown key throws. The table is read once per request.
-- A rate (GST, the tax estimate) is an integer in basis points: 1000 is 10%. `Settings::percentage()` and `setPercentage()` convert for a form. Never hold a rate as a float.
+- A rate setting (GST, the tax estimate) is read in basis points; `Settings::percentage()` and `setPercentage()` convert for the settings form.
 - The site name comes from the `site_name` setting, copied into `config('app.name')` for each web request by `ApplySettings`. Code outside a web request (a queued job, a command) reads `Settings::get('site_name')`.
 - There are no roles or permissions. Every login sees and does everything, so no screen checks an ability for who the user is.
 - Until the app is live, a schema change edits the table's own migration rather than adding a second one; rebuild with `composer fresh`.

@@ -136,9 +136,7 @@ class Settings
      */
     public function percentage(string $key): string
     {
-        $percentage = bcdiv((string) $this->get($key), '100', 2);
-
-        return rtrim(rtrim($percentage, '0'), '.');
+        return BasisPoints::toPercentage($this->get($key));
     }
 
     /**
@@ -146,7 +144,7 @@ class Settings
      */
     public function setPercentage(string $key, string $percentage): void
     {
-        $this->set($key, (int) bcmul($percentage, '100', 0));
+        $this->set($key, BasisPoints::fromPercentage($percentage));
     }
 
     /**
