@@ -33,7 +33,8 @@ return [
         'local' => [
             'driver' => 'local',
             'root' => storage_path('app/private'),
-            'serve' => true,
+            // Private files are sent by a controller behind the login, never by a signed URL.
+            'serve' => false,
             'throw' => false,
             'report' => false,
         ],
