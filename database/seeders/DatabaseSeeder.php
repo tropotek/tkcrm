@@ -7,6 +7,7 @@ use App\Enums\Cycle;
 use App\Models\Company;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\Project;
 use App\Models\User;
 use App\Notifications\Notice;
 use Illuminate\Database\Seeder;
@@ -34,6 +35,7 @@ class DatabaseSeeder extends Seeder
 
         $this->companies();
         $this->products();
+        $this->projects();
     }
 
     /**
@@ -85,6 +87,27 @@ class DatabaseSeeder extends Seeder
                 if (! Product::where('code', $product['code'])->exists()) {
                     Product::factory()->for($category, 'category')->create($product);
                 }
+            }
+        }
+    }
+
+    /**
+     * A project of each status for the seeded clients, found again by name. Dates are set from today.
+     */
+    private function projects(): void
+    {
+        $projects = [
+            ['Wattle Creek Bakery', 'Online ordering', 480000, ['start_on' => today()->subWeeks(6), 'end_on' => today()->addWeeks(6)]],
+            ['Wattle Creek Bakery', 'Site refresh', 150000, ['start_on' => today()->subMonths(8), 'end_on' => today()->subMonths(6)]],
+            ['Ironbark Surveying', 'Job tracking portal', 1250000, ['start_on' => today()->addWeeks(3)]],
+            ['Saltbush Yoga Studio', 'Class booking app', 620000, ['start_on' => today()->subMonths(2), 'cancelled_on' => today()->subMonth()]],
+        ];
+
+        foreach ($projects as [$client, $name, $quote, $dates]) {
+            $company = Company::where('name', $client)->first();
+
+            if ($company && ! Project::where('name', $name)->exists()) {
+                Project::factory()->for($company)->create(['name' => $name, 'quote' => $quote] + $dates);
             }
         }
     }

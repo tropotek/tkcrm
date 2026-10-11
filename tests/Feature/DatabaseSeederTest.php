@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Enums\CompanyType;
 use App\Enums\Cycle;
+use App\Enums\ProjectStatus;
 use App\Models\Company;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\Project;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -100,6 +102,20 @@ class DatabaseSeederTest extends TestCase
         $this->assertSame('Development data is ready', User::sole()->notifications()->sole()->data['title']);
     }
 
+    public function test_it_makes_a_project_of_each_status_however_often_it_is_seeded(): void
+    {
+        $this->runSeeder();
+        $this->runSeeder();
+
+        $this->assertSame(4, Project::count());
+        $this->assertEqualsCanonicalizing(
+            ProjectStatus::cases(),
+            Project::get()->map(fn (Project $project) => $project->status())->all(),
+        );
+        $this->assertSame('$4,800.00', Project::where('name', 'Online ordering')->sole()->quote->format());
+        $this->assertSame(2, Company::where('name', 'Wattle Creek Bakery')->sole()->projects()->count());
+    }
+
     public function test_it_seeds_nothing_in_production(): void
     {
         $this->app['env'] = 'production';
@@ -109,5 +125,6 @@ class DatabaseSeederTest extends TestCase
         $this->assertSame(0, User::count());
         $this->assertSame(0, Company::count());
         $this->assertSame(0, Product::count());
+        $this->assertSame(0, Project::count());
     }
 }
