@@ -15,6 +15,7 @@ The live tktask at `https://task.ttek.org/` sends real invoices. Nothing here co
 - PHP 8.4, Laravel 13, Octane on FrankenPHP
 - SQLite in WAL mode
 - Vite, Bootstrap 5 with the Minton default skin (light and dark), ApexCharts for charts, htmx and Alpine
+- dompdf for PDFs, built in-process
 - PHPUnit for tests (not Pest), Pint for code style
 
 ## Commands
@@ -125,6 +126,8 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - An invoice is overdue when `$invoice->isOverdue()`: unpaid and its due date before the signed-in user's today (the due date itself is not overdue). `Invoice::overdue()` is the matching scope; change the two together.
 - `$invoice->issue()`, `reopen()` and `cancel()` are the only things that set an invoice's number, dates, GST rate and stored totals; each has a `…Problem()` method giving the reason it cannot be done. Issuing sends nothing. Re-opening (unpaid, no payment) clears the stored figures and keeps the number. Cancelling keeps everything, lines included, and is final; it is confirmed in the shared dialog, where a ticked box re-opens the tasks billed on it (`Task::reopenOffCancelledInvoice()`, which leaves the line in place) so their time can be billed again.
 - A payment goes in through `$invoice->recordPayment()` and out through `removePayment()`, which set and clear `paid_on`; `paymentProblem()` says why one is refused (only an unpaid invoice, above zero, never more than `$invoice->outstanding()`). Recording one sends nothing. A list that shows what is owing loads `withSum('payments', 'amount')`, which `paidTotal()` uses.
+- A PDF is built in-process with dompdf from a Blade view that stands alone (its own styles, no script, nothing fetched), by a class like `App\Invoices\InvoicePdf`, which also gives the same HTML for an on-screen preview. A document prints figures it is given (`$invoice->totals()`); it works nothing out.
+- The invoice document is a "Tax invoice" with a GST line only when `$invoice->totals()->chargesGst()`; otherwise it is an "Invoice" that states no GST has been charged. An open invoice prints as a watermarked draft with no number.
 - Whatever bills a client adds a line to `$company->openInvoice()`, which finds the company's open invoice or makes one.
 - An invoice line (`App\Models\InvoiceLine`) copies its product code, description and unit price; it does not point at a product. Its quantity is a decimal string of up to four places and a float is refused. Its `source` is the record it was made from (a task), by morph map name.
 - The invoices migration is dated before the tasks one, because `tasks.invoice_line_id` is a foreign key to `invoice_lines`.

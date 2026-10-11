@@ -18,6 +18,10 @@
 
 <x-layouts.app :title="$title">
     <x-slot:actions>
+        @if ($invoice->lines->isNotEmpty())
+            <a href="{{ route('invoices.preview', $invoice) }}" target="_blank" rel="noopener" class="btn btn-light" title="As the client will see it"><i class="ri-eye-line me-1"></i>Preview</a>
+            <a href="{{ route('invoices.pdf', $invoice) }}" target="_blank" rel="noopener" class="btn btn-light"><i class="ri-file-pdf-2-line me-1"></i>{{ $open ? 'Draft PDF' : 'PDF' }}</a>
+        @endif
         @if ($open)
             <button type="button" class="btn btn-light" hx-get="{{ route('invoices.edit', $invoice) }}" hx-target="#app-modal-content"><i class="ri-pencil-line me-1"></i>Edit details</button>
             <button type="button" class="btn btn-light" hx-get="{{ route('invoices.lines.create', $invoice) }}" hx-target="#app-modal-content"><i class="ri-add-line me-1"></i>Add line</button>

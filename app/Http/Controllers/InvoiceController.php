@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Enums\InvoiceStatus;
 use App\Http\Requests\InvoiceRequest;
+use App\Invoices\InvoicePdf;
 use App\Invoices\InvoiceSearch;
 use App\Models\Company;
 use App\Models\Invoice;
@@ -56,6 +57,29 @@ class InvoiceController extends Controller
             'totals' => $invoice->totals(),
             'unpaid' => $invoice->company->invoices()->withStatus(InvoiceStatus::Unpaid)->whereKeyNot($invoice->id)
                 ->orderBy('issued_on')->orderBy('id')->get(),
+        ]);
+    }
+
+    /**
+     * The invoice as the client sees it, on screen: the same document the PDF is made from.
+     */
+    public function preview(Invoice $invoice, InvoicePdf $document): Response
+    {
+        return response($document->html($invoice));
+    }
+
+    /**
+     * The invoice as a PDF, shown in the browser, or downloaded with `?download=1`.
+     * An open invoice comes as a draft.
+     */
+    public function pdf(Request $request, Invoice $invoice, InvoicePdf $document): Response
+    {
+        $disposition = $request->boolean('download') ? 'attachment' : 'inline';
+
+        return response($document->pdf($invoice), 200, [
+            'Content-Type' => 'application/pdf',
+            'Content-Disposition' => "{$disposition}; filename=\"{$document->filename($invoice)}\"",
+            'Cache-Control' => 'private, no-store',
         ]);
     }
 
