@@ -1,5 +1,6 @@
 {{--
-    A task's own page: its details, its time and its attachments. An open task can be edited,
+    A task's own page: its details, its attachments and its time logs, which are added and edited
+    in the shared dialog. An open task can be edited,
     closed or cancelled. A closed or cancelled one is read-only until it is re-opened, which it
     cannot be once its time is on an invoice.
     $loggedMinutes, $billableMinutes and $worth: its time logs, added up.
@@ -112,6 +113,73 @@
                     <x-attachments :for="$task" />
                 </div>
             </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            @if ($task->isOpen())
+                <button type="button" class="btn btn-sm btn-primary float-end" hx-get="{{ route('task-logs.create', ['task' => $task->id]) }}" hx-target="#app-modal-content"><i class="ri-add-line me-1"></i>Log time</button>
+            @endif
+            <h4 class="header-title mb-3">Time logs</h4>
+
+            @if ($task->logs->isEmpty())
+                <p class="text-muted mb-0">No time logged.</p>
+            @else
+                <div class="table-responsive">
+                    <table class="table table-hover table-centered mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Start</th>
+                                <th>Product</th>
+                                <th>Comment</th>
+                                <th class="text-end">Time</th>
+                                <th class="text-end">Rate</th>
+                                <th class="text-end">Worth</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($task->logs as $log)
+                                <tr>
+                                    <td class="text-nowrap"><x-date :value="$log->started_at" /></td>
+                                    <td>{{ $log->product->name }}</td>
+                                    <td>{!! nl2br(e($log->comment)) !!}</td>
+                                    <td class="text-end text-nowrap">{{ Duration::format($log->minutes) }}</td>
+                                    <td class="text-end text-nowrap">{{ $log->rate->format() }}</td>
+                                    <td class="text-end text-nowrap">
+                                        @if ($log->billable)
+                                            {{ $log->amount()->format() }}
+                                        @else
+                                            <span class="badge bg-secondary">Not billable</span>
+                                        @endif
+                                    </td>
+                                    <td class="text-end text-nowrap">
+                                        @if ($task->isOpen())
+                                            <button type="button" class="btn btn-sm btn-light" hx-get="{{ route('task-logs.edit', $log) }}" hx-target="#app-modal-content">Edit</button>
+                                            <form method="POST" action="{{ route('task-logs.destroy', $log) }}" class="d-inline"
+                                                onsubmit="return confirm('Delete this time log?')">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </form>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                        <tfoot>
+                            <tr class="fw-semibold">
+                                <td colspan="3">Total <span class="fw-normal text-muted ms-2">{{ Duration::format($billableMinutes) }} billable</span></td>
+                                <td class="text-end text-nowrap">{{ Duration::format($loggedMinutes) }}</td>
+                                <td></td>
+                                <td class="text-end text-nowrap">{{ $worth->format() }}</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            @endif
         </div>
     </div>
 </x-layouts.app>

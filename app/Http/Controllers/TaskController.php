@@ -80,7 +80,7 @@ class TaskController extends Controller
 
     public function show(Task $task): View
     {
-        $task->load('company', 'project', 'category', 'logs');
+        $task->load('company', 'project', 'category', 'logs.product');
         $billable = $task->logs->where('billable', true);
 
         return view('tasks.show', [

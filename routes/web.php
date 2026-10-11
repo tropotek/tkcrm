@@ -12,6 +12,7 @@ use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TaskCategoryController;
 use App\Http\Controllers\TaskController;
+use App\Http\Controllers\TaskLogController;
 use App\Http\Middleware\ApplySettings;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
@@ -38,6 +39,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/tasks/{task}/close', [TaskController::class, 'close'])->name('tasks.close');
     Route::post('/tasks/{task}/cancel', [TaskController::class, 'cancel'])->name('tasks.cancel');
     Route::post('/tasks/{task}/reopen', [TaskController::class, 'reopen'])->name('tasks.reopen');
+    // Time logs are added and edited in the shared dialog.
+    Route::resource('task-logs', TaskLogController::class)->except('show');
     Route::resource('task-categories', TaskCategoryController::class)->except('show');
 
     Route::get('/products/prices', [ProductPriceController::class, 'edit'])->name('products.prices.edit');

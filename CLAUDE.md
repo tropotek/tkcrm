@@ -110,6 +110,8 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - A model whose attachments are locked at times overrides `canChangeAttachments()` from `HasAttachments`; the panel and `AttachmentController` both obey it.
 - A length of time is typed into `<x-duration name="…" label="…" :minutes="…" />`, which posts `name[hours]` and `name[minutes]`; `Duration::fromParts()` makes them minutes.
 - A time log (`App\Models\TaskLog`) copies its `rate` (cents per hour) from its product when it is made, and again only if its product is changed. `$log->amount()` is the rate for its minutes, to the cent. Bill from the log's rate, never from the product's current price.
+- Time logs are added and edited in the shared dialog (`TaskLogController`, `task-logs/dialog.blade.php`), from a task's page (`?task=ID`) or from the list of all logs at `/task-logs`. A save answers `HX-Refresh: true` with a flashed message instead of `modal-close`, because a log changes the page's totals as well as its list. Use that when a dialog's save changes more of the page than one table.
+- A time log's start is typed in the user's timezone (`datetime-local`) and stored as a UTC moment; the list's date range is in the reader's days. The logs of a closed or cancelled task are read-only.
 - Durations are whole minutes in the database and shown with `App\Support\Duration::format()` ("8h 30m").
 - A date-only value (a project's start, an invoice's due date) is shown with `->format('j M Y')`, not `<x-date>`: it is a day, not a moment, and must not shift with the timezone.
 - What a project's work adds up to against its quote is `App\Projects\ProjectSummary`. Billable time is always priced per log with `$log->amount()` and then summed.

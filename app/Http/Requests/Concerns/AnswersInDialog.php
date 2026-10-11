@@ -4,6 +4,7 @@ namespace App\Http\Requests\Concerns;
 
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Http\Exceptions\HttpResponseException;
+use Illuminate\Support\ViewErrorBag;
 
 /**
  * For a form request whose form can be posted from the shared dialog. Such a form comes back into
@@ -22,6 +23,9 @@ trait AnswersInDialog
      */
     protected function failInDialog(Validator $validator, string $view, array $data = []): never
     {
-        throw new HttpResponseException(response(view($view, $data)->withErrors($validator)->render(), 422));
+        // Shared, not only given to the dialog's view, so that the components it uses see them too.
+        view()->share('errors', (new ViewErrorBag)->put('default', $validator->errors()));
+
+        throw new HttpResponseException(response(view($view, $data)->render(), 422));
     }
 }

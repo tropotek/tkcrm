@@ -79,6 +79,14 @@ class TaskLog extends Model
     }
 
     /**
+     * A log is as read-only as its task.
+     */
+    public function canChangeAttachments(): bool
+    {
+        return $this->task->isOpen();
+    }
+
+    /**
      * What the time is worth at its rate, to the cent: the rate times the minutes, over sixty.
      * It is the amount whether or not the log is billable.
      */
