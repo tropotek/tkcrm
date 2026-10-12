@@ -40,3 +40,6 @@ phpunit.xml
 .phpunit.result.cache
 docker-compose*.yml
 *.log
+
+# Not needed to run the site
+docs

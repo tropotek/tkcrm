@@ -81,6 +81,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - `routes/api.php`, `app/Api/`: the read-only JSON API. `routes/ai.php`, `app/Mcp/`: the MCP server over it.
 - `resources/fonts/`, `resources/images/`: icon fonts and images the SCSS refers to.
 - `.github/workflows/`: `ci.yml` runs Pint and the suite on every push to `main` and pull request; `release.yml` builds and publishes `ghcr.io/tropotek/tkcrm` from a `v*` tag, stamped with the tag as its version. `bin/release` makes that tag.
+- `README.md`, `docs/`: what someone hosting the site reads: installation and HTTPS, configuration and mail, backup and restore, the API and MCP, the import, development. They say how the site is now, with no history. A new `.env` setting goes in `docs/configuration.md` and the live compose file's header; a new API endpoint in `docs/api.md`.
 - `tests/Feature`, `tests/Unit`: PHPUnit tests.
 - `_notes/`: local planning docs, gitignored.
 - `version.md`: the app version.

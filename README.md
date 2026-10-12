@@ -1,45 +1,31 @@
 # tkcrm
 
-Clients, tasks and time, invoices, recurring billing, expenses, a profit and loss report per financial year, and client site monitoring, for one owner-operator.
+Clients, tasks and time, invoices and payments, recurring billing, expenses, a profit and loss
+report for each financial year, and monitoring of client sites, for one owner-operator. Built on
+Laravel, shipped as one Docker image (FrankenPHP and SQLite) with everything it stores in a single
+`data/` directory. AUD is the only currency.
 
-Built on Laravel 13 and SQLite. A rewrite of tktask.
+Nothing is issued or emailed to a client without your click: recurring items and overdue reminders
+are drafted and wait in a review queue.
 
-Status: in development.
+## Quick start
 
-## Development
+Copy [`docker-compose-live.yml`](docker-compose-live.yml) into an empty directory, then:
 
-Requires Docker. PHP 8.4, Composer and Node are in the dev image.
-
-```bash
-cp .env.example .env
-docker compose up -d                                  # builds the image, installs PHP and Node packages
-docker compose exec app php artisan key:generate
-docker compose exec app php artisan migrate
-docker compose exec app composer test                 # run the test suite
+```sh
+docker compose -f docker-compose-live.yml up -d
+docker compose -f docker-compose-live.yml exec app artisan tkcrm:create-user you@example.com
 ```
 
-- App: http://localhost:8780
-- Vite dev server: http://localhost:5780
-- Mailpit (all outgoing mail): http://localhost:8781
+Open <http://localhost:8080>.
 
-The ports are set in `.env`.
+## Documentation
 
-The queue and the scheduler run in a `worker` container that is off by default, so a dev site never bills, mails or pings on a timer. Start it with `docker compose --profile worker up -d`.
-
-## API and MCP
-
-Both are read-only: they can read what you see on the screens and cannot change a record, issue an invoice or send an email. Both take a personal access token, made on the profile page under API tokens. The token is shown once, when it is made.
-
-**API.** JSON at `/api/v1`, GET only. `GET /api/v1` lists the endpoints: clients, invoices, outstanding, tasks, time-logs, recurring, expenses, profit-loss and sites. Each takes the same filters as its screen, by the same names, and a list is paged with `page` and `per_page`. Amounts are decimal strings in AUD.
-
-```bash
-curl -H "Authorization: Bearer YOUR-TOKEN" -H "Accept: application/json" "http://tkcrm.tk/api/v1/outstanding"
-```
-
-**MCP.** A server at `/mcp` with one tool for each endpoint, for an assistant such as Claude. Register it with Claude Code, with a token in place of `YOUR-TOKEN` and your own address in place of `http://tkcrm.tk`:
-
-```bash
-claude mcp add --transport http tkcrm http://tkcrm.tk/mcp --header "Authorization: Bearer YOUR-TOKEN"
-```
-
-The profile page shows the same line with the site's own address filled in.
+| Guide | For |
+|---|---|
+| [Installation](docs/installation.md) | Running tkcrm with Docker Compose, HTTPS three ways, upgrading |
+| [Configuration](docs/configuration.md) | Environment variables, mail, and the settings in the site |
+| [Backup and restore](docs/backup-restore.md) | Backing up the `data/` directory and restoring it |
+| [API and Claude (MCP)](docs/api.md) | Tokens, the JSON endpoints and connecting an assistant |
+| [Import from tktask](docs/import-from-tktask.md) | Bringing a tktask site over and checking the figures |
+| [Development](docs/development.md) | Working on tkcrm, running tests, releasing |
