@@ -94,6 +94,11 @@ return [
     |
     */
 
+    'api' => [
+        // How many requests a minute one token's user may make of the read-only API.
+        'per_minute' => (int) env('TKCRM_API_PER_MINUTE', 120),
+    ],
+
     'monitoring' => [
         'timeout' => 15,
         'down_after' => 2,

@@ -74,6 +74,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - `config/tkcrm.php`: tkcrm's own settings that come from the environment.
 - `resources/views/components/`: `field` (a form's text field), `company-select`, `duration` (hours and minutes), `attachments`, `modal` (what a dialog route returns) and `date`.
 - `config/navigation.php`: the sidebar menu, read by `App\Support\Navigation`.
+- `routes/api.php`, `app/Api/`: the read-only JSON API.
 - `resources/fonts/`, `resources/images/`: icon fonts and images the SCSS refers to.
 - `tests/Feature`, `tests/Unit`: PHPUnit tests.
 - `_notes/`: local planning docs, gitignored.
@@ -97,6 +98,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - Flash messages: `->with('success' | 'error' | 'warning' | 'info', '…')`.
 - Every page needs a signed-in user: put its route inside the `auth` group in `routes/web.php`. The login and password reset routes are in `routes/auth.php`. There is no registration. `RoutesNeedLoginTest` lists the only routes open to a guest and fails when another appears.
 - API tokens are Laravel Sanctum's, made and revoked on the profile page (`ApiTokenController`), each with the one ability `read`. An API route is behind `['auth:sanctum', 'abilities:read']`. A token is never a login to the screens and the web session is never a login to the API; Sanctum's own cookie route is off (`sanctum.routes`).
+- The read-only API is `/api/v1` (`routes/api.php`), GET only. What each endpoint answers is a method of `App\Api\ApiData`, which reads through the screen's own search or report class with the screen's own filter names; never query for the API separately. A list is paged with `App\Api\Page`, and values are written with `App\Api\Format` (amounts as decimal strings, days as `Y-m-d`, moments in UTC). An endpoint is added to `ApiData`, `ApiController`, `routes/api.php` and the index's list together.
 - Private files are never served by a signed URL (`serve` is off on the `local` disk): a controller behind the login sends them.
 - Login and password recovery are throttled per email and IP address together, with the limits in `config/tkcrm.php`. Recovery and reset answer the same whether or not the email has an account; keep it that way when changing them.
 - Emails are stored in lower case and SQLite compares them exactly, so lower-case an email before looking a user up by it.

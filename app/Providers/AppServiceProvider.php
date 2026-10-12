@@ -12,10 +12,13 @@ use App\Models\Task;
 use App\Models\TaskLog;
 use App\Support\Owner;
 use App\Support\Settings;
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\Request;
 use Illuminate\Mail\Events\MessageSending;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -36,6 +39,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        // The API: so many requests a minute for each token's user.
+        RateLimiter::for('api', fn (Request $request) => Limit::perMinute((int) config('tkcrm.api.per_minute'))->by((string) ($request->user()?->id ?? $request->ip())));
 
         // MAIL_REDIRECT_TO: every message the app sends, whatever sends it.
         Event::listen(MessageSending::class, RedirectAllMail::class);
