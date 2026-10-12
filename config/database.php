@@ -37,6 +37,26 @@ return [
 
     'connections' => [
 
+        /*
+        | The tktask database that `tkcrm:import-tktask` reads: a copy of the live one, loaded into
+        | tktask's own dev stack by hand. Never the live server. Nothing is written to it.
+        */
+        'tktask' => [
+            'driver' => env('TKTASK_DB_CONNECTION', 'mariadb'),
+            'url' => env('TKTASK_DB_URL'),
+            'host' => env('TKTASK_DB_HOST', '127.0.0.1'),
+            'port' => env('TKTASK_DB_PORT', '3306'),
+            'database' => env('TKTASK_DB_DATABASE', 'tktask'),
+            'username' => env('TKTASK_DB_USERNAME', 'root'),
+            'password' => env('TKTASK_DB_PASSWORD', ''),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_unicode_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
+        ],
+
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => env('DB_URL'),
