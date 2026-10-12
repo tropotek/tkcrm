@@ -2,6 +2,7 @@
 
 namespace App\Import;
 
+use App\Attachments\AttachmentStore;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -30,6 +31,7 @@ class Importer
         Passes\RecurringsPass::class,
         Passes\ExpensesPass::class,
         Passes\DomainsPass::class,
+        Passes\FilesPass::class,
         // Last: its settings point at a company and a product, which must be in first.
         Passes\SettingsPass::class,
     ];
@@ -79,6 +81,20 @@ class Importer
 
         $started = CarbonImmutable::now();
 
+        try {
+            return $this->replace($context, $started);
+        } finally {
+            // Emptying the attachments table leaves its files on the disk, and so does a run that
+            // was rolled back after copying some in. Whatever no row names now is taken off.
+            app(AttachmentStore::class)->sweep();
+        }
+    }
+
+    /**
+     * @return array<string, array{count: int, imported: ?int}>
+     */
+    private function replace(ImportContext $context, CarbonImmutable $started): array
+    {
         return DB::transaction(function () use ($context, $started) {
             // Everything the import fills goes first, whichever passes there are, so that what is
             // left is tktask's data and nothing else. A domain's pings go with it.

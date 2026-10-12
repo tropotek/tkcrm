@@ -13,7 +13,8 @@ class ImportTktask extends Command
 {
     protected $signature = 'tkcrm:import-tktask
                             {--dry-run : Report what would be imported and change nothing}
-                            {--force : Run even though records made or changed in tkcrm will be replaced}';
+                            {--force : Run even though records made or changed in tkcrm will be replaced}
+                            {--data= : The path to a copy of tktask\'s data directory, to bring its attached files over}';
 
     protected $description = 'Import a copy of the tktask database (the TKTASK_DB_* connection), replacing what an earlier import brought. Never the live server';
 
@@ -43,7 +44,15 @@ class ImportTktask extends Command
             $this->components->warn($difference);
         }
 
-        $context = new ImportContext($source, $dryRun);
+        $data = $this->option('data');
+
+        if ($data !== null && ! is_dir($data)) {
+            $this->components->error("There is no directory at {$data}. --data is the path to a copy of tktask's data directory, as this container sees it.");
+
+            return self::FAILURE;
+        }
+
+        $context = new ImportContext($source, $dryRun, $data === null ? null : rtrim((string) realpath($data), '/'));
 
         // A dry run changes nothing, so it is not refused: it says what a real run would meet.
         if ($dryRun && ($madeHere = $importer->madeHere()) !== []) {

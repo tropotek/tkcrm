@@ -3,9 +3,11 @@
 namespace Tests\Feature\Import;
 
 use App\Import\TktaskSource;
+use App\Models\Attachment;
 use Illuminate\Database\Connection;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * A made-up tktask database for an import test: the `tktask` connection as an in-memory SQLite
@@ -16,6 +18,10 @@ trait TktaskDatabase
 {
     protected function setUpTktask(): Connection
     {
+        // An import sweeps the private disk for attachment files no row names. In a test that must
+        // be a disk of the test's own, never the developer's.
+        Storage::fake(Attachment::DISK);
+
         config(['database.connections.'.TktaskSource::CONNECTION => [
             'driver' => 'sqlite', 'database' => ':memory:', 'prefix' => '', 'foreign_key_constraints' => false,
         ]]);

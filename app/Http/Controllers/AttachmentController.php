@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Attachments\AttachmentStore;
 use App\Attachments\HasAttachments;
-use App\Attachments\Thumbnail;
 use App\Models\Attachment;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -11,7 +11,6 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -49,33 +48,8 @@ class AttachmentController extends Controller
         }
 
         $file = $request->file('file');
-        $disk = Storage::disk(Attachment::DISK);
-        $directory = "attachments/{$owner->attachableType()}/{$owner->getKey()}";
 
-        // The name on disk is random, with an extension from the file's contents, never from what was typed.
-        $name = Str::random(40);
-        $path = $file->storeAs($directory, $name.'.'.$file->extension(), Attachment::DISK);
-        $mime = $file->getMimeType() ?? 'application/octet-stream';
-        $thumbnailPath = null;
-
-        if (str_starts_with($mime, 'image/')) {
-            $thumbnail = Thumbnail::make($disk->get($path), config('tkcrm.attachments.thumbnail_px'));
-
-            if ($thumbnail !== null) {
-                $thumbnailPath = "{$directory}/{$name}_thumb.jpg";
-                $disk->put($thumbnailPath, $thumbnail);
-            }
-        }
-
-        $owner->attachments()->create([
-            'label' => $validator->validated()['label'] ?? pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME),
-            'file_name' => Str::limit(basename($file->getClientOriginalName()), 250, ''),
-            'path' => $path,
-            'thumbnail_path' => $thumbnailPath,
-            'bytes' => $file->getSize(),
-            'mime_type' => $mime,
-            'notes' => $validator->validated()['notes'] ?? null,
-        ]);
+        app(AttachmentStore::class)->store($owner, $file, $file->getClientOriginalName(), $validator->validated()['label'] ?? null, $validator->validated()['notes'] ?? null);
 
         return $this->panel($owner);
     }

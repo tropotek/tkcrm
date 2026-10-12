@@ -14,9 +14,13 @@ class ImportContext
     /** @var list<string> lines for the end of the report */
     public array $notes = [];
 
+    /**
+     * @param  ?string  $dataPath  tktask's `data` directory, where its attached files are, when it was given
+     */
     public function __construct(
         public readonly TktaskSource $source,
         public readonly bool $dryRun = false,
+        public readonly ?string $dataPath = null,
     ) {}
 
     public function warn(string $message): void
