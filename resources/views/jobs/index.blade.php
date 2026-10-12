@@ -68,7 +68,8 @@
 
     <div class="card">
         <div class="card-body">
-            <h4 class="header-title mb-3">Recent runs</h4>
+            <h4 class="header-title mb-1">Recent runs</h4>
+            <p class="text-muted small">A job that runs every few minutes is listed here only when a run of it failed.</p>
 
             @if ($recent->isEmpty())
                 <p class="text-muted mb-0">Nothing has run yet. The schedule runs only while the worker is up.</p>

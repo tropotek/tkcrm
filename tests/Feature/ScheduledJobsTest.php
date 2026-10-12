@@ -55,6 +55,8 @@ class ScheduledJobsTest extends TestCase
         $this->assertSame([
             ['tkcrm:bill-recurring', '0 7 * * *', 'Australia/Melbourne'],
             ['tkcrm:send-review-digest', '10 7 * * *', 'Australia/Melbourne'],
+            ['tkcrm:check-sites', '*/5 * * * *', 'Australia/Melbourne'],
+            ['tkcrm:prune-pings', '35 3 * * *', 'Australia/Melbourne'],
             ['tkcrm:prune-notifications', '25 3 * * *', 'Australia/Melbourne'],
         ], $scheduled);
 
@@ -193,6 +195,31 @@ class ScheduledJobsTest extends TestCase
         JobRun::start('tkcrm:bill-recurring');
 
         $this->actingAs($this->user)->get('/jobs')->assertSee('bg-info">Running', false);
+    }
+
+    public function test_a_job_that_runs_every_few_minutes_is_in_the_recent_runs_only_when_it_failed(): void
+    {
+        JobRun::create(['command' => 'tkcrm:check-sites', 'started_at' => '2026-10-19 22:50:00', 'finished_at' => '2026-10-19 22:50:02', 'succeeded' => true, 'output' => 'Checked 5 sites quietly.']);
+        JobRun::create(['command' => 'tkcrm:check-sites', 'started_at' => '2026-10-19 22:55:00', 'finished_at' => '2026-10-19 22:55:09', 'succeeded' => false, 'output' => 'The check fell over.']);
+        JobRun::create(['command' => 'tkcrm:check-sites', 'started_at' => '2026-10-19 23:00:00', 'finished_at' => '2026-10-19 23:00:02', 'succeeded' => true, 'output' => 'Checked 5 sites: 5 answered.']);
+
+        $this->actingAs($this->user)
+            ->get('/jobs')
+            // Its last run is on its own line of the jobs, whatever it was.
+            ->assertSeeInOrder(['Site checks', 'Every 5 minutes', 'bg-success">OK', 'Checked 5 sites: 5 answered.'], false)
+            ->assertSeeInOrder(['Recent runs', 'Site checks', 'Failed', 'The check fell over.'], false)
+            ->assertDontSee('Checked 5 sites quietly.');
+    }
+
+    public function test_the_site_checks_run_every_five_minutes(): void
+    {
+        $event = $this->event('tkcrm:check-sites');
+
+        $this->travelTo('2026-10-19 23:05:00');
+        $this->assertTrue($event->isDue($this->app));
+
+        $this->travelTo('2026-10-19 23:07:00');
+        $this->assertFalse($event->isDue($this->app));
     }
 
     public function test_a_guest_is_sent_to_the_login_screen(): void

@@ -76,4 +76,32 @@ return [
         'retry_after' => [60, 300, 900],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Site monitoring
+    |--------------------------------------------------------------------------
+    |
+    | timeout: seconds a site has to answer a check.
+    |
+    | down_after: how many checks in a row must fail before a site is down.
+    | One success makes it up again.
+    |
+    | outside: addresses asked when any site fails, to tell a site that is
+    | down from this machine having lost its own connection. If none of them
+    | answers, the run is skipped and nothing is recorded.
+    |
+    | keep_ping_days: checks older than this are deleted nightly.
+    |
+    */
+
+    'monitoring' => [
+        'timeout' => 15,
+        'down_after' => 2,
+        'outside' => [
+            'https://www.google.com/generate_204',
+            'https://www.cloudflare.com/cdn-cgi/trace',
+        ],
+        'keep_ping_days' => 365,
+    ],
+
 ];

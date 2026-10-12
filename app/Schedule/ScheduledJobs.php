@@ -30,7 +30,10 @@ final class ScheduledJobs
      * The billing run and the digest are set by the clock where the business is, so they stay at
      * seven in the morning through daylight saving.
      *
-     * @return list<array{command: string, label: string, does: string, cron: string, timezone: string, when: string}>
+     * A job marked `frequent` runs so often that its runs are left out of the page's list of
+     * recent runs unless one failed.
+     *
+     * @return list<array{command: string, label: string, does: string, cron: string, timezone: string, when: string, frequent?: bool}>
      */
     public static function all(): array
     {
@@ -50,6 +53,23 @@ final class ScheduledJobs
                 'cron' => '10 7 * * *',
                 'timezone' => User::DEFAULT_TIMEZONE,
                 'when' => 'Every day at 7:10 am, after the billing',
+            ],
+            [
+                'command' => 'tkcrm:check-sites',
+                'label' => 'Site checks',
+                'does' => 'Checks that every active watched site answers, and keeps each one\'s state.',
+                'cron' => '*/5 * * * *',
+                'timezone' => User::DEFAULT_TIMEZONE,
+                'when' => 'Every 5 minutes',
+                'frequent' => true,
+            ],
+            [
+                'command' => 'tkcrm:prune-pings',
+                'label' => 'Ping pruning',
+                'does' => 'Deletes site checks older than '.config('tkcrm.monitoring.keep_ping_days').' days.',
+                'cron' => '35 3 * * *',
+                'timezone' => User::DEFAULT_TIMEZONE,
+                'when' => 'Every night at 3:35 am',
             ],
             [
                 'command' => 'tkcrm:prune-notifications',

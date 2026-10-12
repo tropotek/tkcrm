@@ -19,10 +19,17 @@ class JobRunController extends Controller
             'next' => ScheduledJobs::nextRun($job),
         ], ScheduledJobs::all());
 
+        $frequent = array_column(array_filter(ScheduledJobs::all(), fn (array $job) => $job['frequent'] ?? false), 'command');
+
         return view('jobs.index', [
             'jobs' => $jobs,
             'labels' => array_column(ScheduledJobs::all(), 'label', 'command'),
-            'recent' => JobRun::latest('id')->limit(30)->get(),
+            // A job that runs every few minutes would fill the list, so only its failures are in it.
+            'recent' => JobRun::query()
+                ->where(fn ($query) => $query->whereNotIn('command', $frequent)->orWhere('succeeded', false))
+                ->latest('id')
+                ->limit(30)
+                ->get(),
             // Mail waiting for the worker, which also runs the queue.
             'queued' => DB::table('jobs')->count(),
         ]);
