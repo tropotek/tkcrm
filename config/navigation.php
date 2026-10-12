@@ -36,7 +36,7 @@ return [
     ['title' => 'Billing'],
     ['label' => 'Invoices', 'icon' => 'ri-bill-line', 'route' => 'invoices.index'],
     ['label' => 'Recurring', 'icon' => 'ri-repeat-line', 'route' => 'recurrings.index'],
-    ['label' => 'Expenses', 'icon' => 'ri-wallet-3-line', 'route' => 'expenses.index'],
+    ['label' => 'Expenses', 'icon' => 'ri-wallet-3-line', 'route' => 'expenses.index', 'active' => ['expenses.*', 'expense-categories.*']],
 
     ['title' => 'Records'],
     ['label' => 'Companies', 'icon' => 'ri-building-line', 'route' => 'companies.index'],

@@ -30,6 +30,14 @@ final readonly class FinancialYear
         return self::of(LocalTime::of(now()));
     }
 
+    /**
+     * As it is said: "2026–27" for the year that ends in 2027.
+     */
+    public function label(): string
+    {
+        return ($this->year - 1).'–'.substr((string) $this->year, -2);
+    }
+
     public function start(): CarbonImmutable
     {
         return CarbonImmutable::create($this->year - 1, 7, 1);

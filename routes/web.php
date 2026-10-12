@@ -3,6 +3,8 @@
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyStatementController;
+use App\Http\Controllers\ExpenseCategoryController;
+use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\HealthController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceEmailController;
@@ -72,6 +74,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/review', [ReviewController::class, 'index'])->name('review.index');
     Route::get('/review/{invoice}', [ReviewController::class, 'show'])->name('review.show');
     Route::post('/review/{invoice}', [ReviewController::class, 'send'])->name('review.send');
+
+    Route::resource('expenses', ExpenseController::class)->except('show');
+    Route::resource('expense-categories', ExpenseCategoryController::class)->except('show');
 
     // A task is never deleted: it is cancelled.
     Route::resource('tasks', TaskController::class)->except('destroy');
