@@ -7,6 +7,7 @@ use App\Http\Controllers\HealthController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceEmailController;
 use App\Http\Controllers\InvoiceLineController;
+use App\Http\Controllers\InvoiceReminderController;
 use App\Http\Controllers\MailLogController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
@@ -56,6 +57,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');
     Route::get('/invoices/{invoice}/email', [InvoiceEmailController::class, 'create'])->name('invoices.email.create');
     Route::post('/invoices/{invoice}/email', [InvoiceEmailController::class, 'store'])->name('invoices.email.store');
+    // An overdue invoice's reminder: previewed and sent, passed over once, or switched off for that invoice.
+    Route::get('/invoices/{invoice}/reminder', [InvoiceReminderController::class, 'create'])->name('invoices.reminder.create');
+    Route::post('/invoices/{invoice}/reminder', [InvoiceReminderController::class, 'store'])->name('invoices.reminder.store');
+    Route::post('/invoices/{invoice}/reminder/skip', [InvoiceReminderController::class, 'skip'])->name('invoices.reminder.skip');
+    Route::put('/invoices/{invoice}/reminders', [InvoiceReminderController::class, 'toggle'])->name('invoices.reminders.toggle');
     Route::resource('invoices.payments', PaymentController::class)->shallow()->only('create', 'store', 'destroy');
     Route::resource('invoices.lines', InvoiceLineController::class)->shallow()->except('index', 'show');
 

@@ -1,5 +1,6 @@
 {{--
-    The review queue: each open invoice with something on it, its lines and where each came from.
+    The review queue: each open invoice with something on it, its lines and where each came from,
+    then $reminders: the overdue invoices with a reminder waiting.
     $problems: by invoice id, why it cannot be issued and sent from here, or null.
     Sending is done in the shared dialog, which shows the email first.
 --}}
@@ -9,13 +10,15 @@
 @endphp
 
 <x-layouts.app title="Review queue">
-    @if ($invoices->isEmpty())
+    @if ($invoices->isEmpty() && $reminders->isEmpty())
         <div class="card">
             <div class="card-body">
-                <p class="text-muted mb-0">Nothing is waiting. An invoice appears here when a closed task or a recurring item puts a line on it.</p>
+                <p class="text-muted mb-0">Nothing is waiting. An invoice appears here when a closed task or a recurring item puts a line on it, and again if it goes unpaid for {{ App\Models\Invoice::REMINDER_FIRST_DAYS }} days past its due date.</p>
             </div>
         </div>
-    @else
+    @endif
+
+    @if ($invoices->isNotEmpty())
         <p class="text-muted">
             {{ $invoices->count() === 1 ? '1 open invoice is' : $invoices->count().' open invoices are' }} waiting to be looked over and sent.
             Nothing has gone to a client: each is issued and emailed only when you send it.
@@ -89,4 +92,69 @@
             </div>
         </div>
     @endforeach
+
+    @if ($reminders->isNotEmpty())
+        <div class="card">
+            <div class="card-body">
+                <h4 class="header-title mb-1">Overdue reminders</h4>
+                <p class="text-muted">
+                    {{ $reminders->count() === 1 ? '1 overdue invoice is' : $reminders->count().' overdue invoices are' }} due a reminder.
+                    None goes until you send it. Pass one over and it comes back in {{ App\Models\Invoice::REMINDER_EVERY_DAYS }} days.
+                </p>
+
+                <div class="table-responsive">
+                    <table class="table table-centered mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Invoice</th>
+                                <th>Client</th>
+                                <th>Due</th>
+                                <th>Last reminded</th>
+                                <th class="text-end">Owing</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($reminders as $invoice)
+                                @php($problem = $invoice->reminderProblem())
+                                <tr>
+                                    <td><a href="{{ route('invoices.show', $invoice) }}" class="fw-medium">{{ $invoice->number }}</a></td>
+                                    <td>
+                                        <a href="{{ route('companies.show', $invoice->company) }}" class="text-reset">{{ $invoice->company->name }}</a>
+                                        @if ($problem)
+                                            <div class="small text-danger">{{ $problem }}</div>
+                                        @endif
+                                    </td>
+                                    <td class="text-nowrap">
+                                        {{ $invoice->due_on->format('j M Y') }}
+                                        <div class="small text-danger">{{ $invoice->daysOverdue() }} days overdue</div>
+                                    </td>
+                                    <td class="text-nowrap">{{ $invoice->reminded_on?->format('j M Y') ?? 'Never' }}</td>
+                                    <td class="text-end text-nowrap">{{ $invoice->outstanding()->format() }}</td>
+                                    <td class="text-end text-nowrap">
+                                        @unless ($problem)
+                                            <button type="button" class="btn btn-sm btn-primary" hx-get="{{ route('invoices.reminder.create', $invoice) }}" hx-target="#app-modal-content">
+                                                <i class="ri-mail-send-line me-1"></i>Preview and send
+                                            </button>
+                                        @endunless
+                                        <form method="POST" action="{{ route('invoices.reminder.skip', $invoice) }}" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-sm btn-light">Pass over</button>
+                                        </form>
+                                        <form method="POST" action="{{ route('invoices.reminders.toggle', $invoice) }}" class="d-inline"
+                                            onsubmit="return confirm('Switch reminders off for invoice {{ $invoice->number }}? It will not come up here again.')">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="on" value="0">
+                                            <button type="submit" class="btn btn-sm btn-light">Switch off</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @endif
 </x-layouts.app>

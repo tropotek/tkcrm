@@ -284,6 +284,56 @@
                 </div>
             @endif
 
+            {{-- Overdue reminders: the days each was sent, when the next falls due, and what can be done about it. --}}
+            @php($reminders = $invoice->mail->where('kind', App\Enums\MailKind::Reminder)->sortBy('id'))
+
+            @if ($invoice->isOverdue() || $reminders->isNotEmpty())
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="header-title mb-3">Overdue reminders</h4>
+
+                        <p class="mb-2">
+                            @if ($reminders->isEmpty())
+                                No reminder has been sent.
+                            @else
+                                Sent on
+                                @foreach ($reminders as $reminder)
+                                    <x-date :value="$reminder->created_at" format="j M Y" />@if ($reminder->state === App\Enums\MailState::Failed) <span class="text-danger">(failed)</span>@endif{{ $loop->last ? '.' : ',' }}
+                                @endforeach
+                            @endif
+
+                            @if ($invoice->isOverdue())
+                                @if ($invoice->reminders_off)
+                                    Reminders are switched off for this invoice.
+                                @elseif ($invoice->isReminderDue())
+                                    <strong>One is waiting to be sent.</strong>
+                                @else
+                                    The next falls due on {{ $invoice->reminderDueOn()->format('j M Y') }}.
+                                @endif
+                            @endif
+                        </p>
+
+                        @if ($invoice->isOverdue())
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-sm btn-light" hx-get="{{ route('invoices.reminder.create', $invoice) }}" hx-target="#app-modal-content"><i class="ri-mail-send-line me-1"></i>Preview a reminder and send</button>
+                                @if ($invoice->isReminderDue())
+                                    <form method="POST" action="{{ route('invoices.reminder.skip', $invoice) }}">
+                                        @csrf
+                                        <button type="submit" class="btn btn-sm btn-light" title="Send nothing now. The next falls due in {{ App\Models\Invoice::REMINDER_EVERY_DAYS }} days">Pass over this one</button>
+                                    </form>
+                                @endif
+                                <form method="POST" action="{{ route('invoices.reminders.toggle', $invoice) }}">
+                                    @csrf
+                                    @method('PUT')
+                                    <input type="hidden" name="on" value="{{ $invoice->reminders_off ? 1 : 0 }}">
+                                    <button type="submit" class="btn btn-sm btn-light">{{ $invoice->reminders_off ? 'Switch reminders back on' : 'Switch reminders off for this invoice' }}</button>
+                                </form>
+                            </div>
+                        @endif
+                    </div>
+                </div>
+            @endif
+
             @if ($invoice->mail->isNotEmpty())
                 <div class="card">
                     <div class="card-body">

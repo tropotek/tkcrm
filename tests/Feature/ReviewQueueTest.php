@@ -283,7 +283,7 @@ class ReviewQueueTest extends TestCase
 
         $this->get('/')
             ->assertSeeInOrder(['href="'.route('review.index').'"', '<span class="badge bg-danger rounded-pill float-end">2</span>', 'Review queue'], false)
-            ->assertSeeInOrder(['Waiting for review', '2 open invoices are waiting']);
+            ->assertSeeInOrder(['Waiting for review', '2 invoices are waiting']);
 
         $this->get('/review')->assertSeeInOrder(['<li class="menuitem-active">', 'href="'.route('review.index').'" class="active"', 'Review queue'], false);
     }

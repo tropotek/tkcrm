@@ -26,7 +26,7 @@ class InvoiceSchemaTest extends TestCase
         $this->assertEqualsCanonicalizing(
             [
                 'id', 'company_id', 'number', 'purchase_order', 'discount', 'billing_address', 'issued_on', 'due_on', 'paid_on', 'cancelled_on',
-                'notes', 'gst_rate', 'subtotal', 'discount_total', 'gst_total', 'total', 'created_at', 'updated_at',
+                'notes', 'gst_rate', 'subtotal', 'discount_total', 'gst_total', 'total', 'reminded_on', 'reminders_off', 'created_at', 'updated_at',
             ],
             Schema::getColumnListing('invoices'),
         );

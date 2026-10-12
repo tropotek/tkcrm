@@ -16,12 +16,13 @@ class ReviewDigestMail extends Mailable
     /**
      * @param  list<string>  $recipients  the logins' email addresses
      * @param  list<array{client: string, lines: int, total: string}>  $waiting  one per open invoice
+     * @param  list<array{client: string, number: int, owing: string, days: int}>  $overdue  one per invoice due a reminder
      */
-    public function __construct(public array $recipients, public array $waiting) {}
+    public function __construct(public array $recipients, public array $waiting, public array $overdue = []) {}
 
     public function envelope(): Envelope
     {
-        $count = count($this->waiting);
+        $count = count($this->waiting) + count($this->overdue);
 
         return new Envelope(
             to: $this->recipients,

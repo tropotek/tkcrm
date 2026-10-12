@@ -40,6 +40,8 @@ use LogicException;
  * @property ?Money $discount_total
  * @property ?Money $gst_total
  * @property ?Money $total
+ * @property ?CarbonImmutable $reminded_on the day its last overdue reminder was sent or passed over
+ * @property bool $reminders_off
  */
 #[Fillable(['company_id', 'purchase_order', 'discount', 'billing_address', 'notes'])]
 class Invoice extends Model
@@ -50,7 +52,14 @@ class Invoice extends Model
     /** @var array<string, mixed> */
     protected $attributes = [
         'discount' => 0,
+        'reminders_off' => false,
     ];
+
+    /** How many days overdue an invoice is when its first reminder falls due. */
+    public const REMINDER_FIRST_DAYS = 7;
+
+    /** How many days after one reminder is sent or passed over the next falls due. */
+    public const REMINDER_EVERY_DAYS = 14;
 
     /**
      * Get the attributes that should be cast.
@@ -71,6 +80,8 @@ class Invoice extends Model
             'discount_total' => MoneyCast::class,
             'gst_total' => MoneyCast::class,
             'total' => MoneyCast::class,
+            'reminded_on' => 'immutable_date',
+            'reminders_off' => 'boolean',
         ];
     }
 
@@ -166,6 +177,88 @@ class Invoice extends Model
     public function scopeOverdue(Builder $query, ?DateTimeInterface $on = null): void
     {
         $query->withStatus(InvoiceStatus::Unpaid)->whereDate('due_on', '<', self::day($on));
+    }
+
+    /**
+     * The day its next overdue reminder falls due: 7 days after its due date for the first, and 14
+     * days after the last was sent or passed over from then on. Null for an invoice that is not
+     * unpaid, or has its reminders switched off.
+     */
+    public function reminderDueOn(): ?CarbonImmutable
+    {
+        if ($this->status() !== InvoiceStatus::Unpaid || $this->due_on === null || $this->reminders_off) {
+            return null;
+        }
+
+        $first = $this->due_on->addDays(self::REMINDER_FIRST_DAYS);
+        $next = $this->reminded_on?->addDays(self::REMINDER_EVERY_DAYS);
+
+        return $next !== null && $next->greaterThan($first) ? $next : $first;
+    }
+
+    /**
+     * Whether a reminder is waiting to be sent: its day has come, on the signed-in user's today.
+     */
+    public function isReminderDue(?DateTimeInterface $on = null): bool
+    {
+        $due = $this->reminderDueOn();
+
+        return $due !== null && $due->toDateString() <= self::day($on);
+    }
+
+    /**
+     * Only the invoices with a reminder waiting, by the same rule as isReminderDue().
+     *
+     * @param  Builder<self>  $query
+     */
+    public function scopeReminderDue(Builder $query, ?DateTimeInterface $on = null): void
+    {
+        $today = CarbonImmutable::parse(self::day($on));
+
+        $query->withStatus(InvoiceStatus::Unpaid)
+            ->where('reminders_off', false)
+            ->whereDate('due_on', '<=', $today->subDays(self::REMINDER_FIRST_DAYS)->toDateString())
+            ->where(fn (Builder $query) => $query
+                ->whereNull('reminded_on')
+                ->orWhereDate('reminded_on', '<=', $today->subDays(self::REMINDER_EVERY_DAYS)->toDateString()));
+    }
+
+    /**
+     * How many days past its due date it is, or 0 when it is not overdue.
+     */
+    public function daysOverdue(?DateTimeInterface $on = null): int
+    {
+        return $this->isOverdue($on) ? (int) $this->due_on->diffInDays(CarbonImmutable::parse(self::day($on))) : 0;
+    }
+
+    /**
+     * Why a reminder cannot be sent, or null when one can: the invoice must be overdue and its
+     * client have an email. One can be sent before its day has come, or with reminders switched off.
+     */
+    public function reminderProblem(): ?string
+    {
+        return match (true) {
+            ! $this->isOverdue() => 'Only an overdue invoice is sent a reminder.',
+            blank($this->company->email) => "{$this->company->name} has no email address, so there is nowhere to send a reminder.",
+            default => null,
+        };
+    }
+
+    /**
+     * Note that a reminder went today, or was passed over: the next is counted from here.
+     */
+    public function markReminded(): void
+    {
+        $this->forceFill(['reminded_on' => self::day(null)])->save();
+    }
+
+    /**
+     * Switch this invoice's reminders off, or back on. Back on, one is due as if none had been
+     * passed over since the last that was sent.
+     */
+    public function setReminders(bool $on): void
+    {
+        $this->forceFill(['reminders_off' => ! $on])->save();
     }
 
     /**
@@ -270,6 +363,7 @@ class Invoice extends Model
             'discount_total' => null,
             'gst_total' => null,
             'total' => null,
+            'reminded_on' => null,
         ])->save();
     }
 

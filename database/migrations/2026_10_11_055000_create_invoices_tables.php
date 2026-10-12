@@ -36,6 +36,10 @@ return new class extends Migration
             $table->integer('discount_total')->nullable();
             $table->integer('gst_total')->nullable();
             $table->integer('total')->nullable();
+            // Overdue reminders: the day the last one was sent or passed over, which the next is
+            // counted from, and whether this invoice is to have none at all.
+            $table->date('reminded_on')->nullable();
+            $table->boolean('reminders_off')->default(false);
             $table->timestamps();
         });
 

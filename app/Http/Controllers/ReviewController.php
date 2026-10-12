@@ -23,6 +23,7 @@ class ReviewController extends Controller
         $invoices = ReviewQueue::invoices()->get();
 
         return view('review.index', [
+            'reminders' => ReviewQueue::reminders()->get(),
             'invoices' => $invoices,
             'problems' => $invoices->mapWithKeys(fn (Invoice $invoice) => [$invoice->id => $this->issueAndSend->problem($invoice)]),
         ]);

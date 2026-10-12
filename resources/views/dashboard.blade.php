@@ -7,7 +7,7 @@
             <div class="card-body d-flex flex-wrap align-items-center gap-2">
                 <div class="me-auto">
                     <h4 class="header-title mb-1">Waiting for review</h4>
-                    <p class="mb-0">{{ $waiting === 1 ? '1 open invoice is' : $waiting.' open invoices are' }} waiting to be looked over and sent.</p>
+                    <p class="mb-0">{{ $waiting === 1 ? '1 invoice is' : $waiting.' invoices are' }} waiting to be looked over and sent, or reminded.</p>
                 </div>
                 <a href="{{ route('review.index') }}" class="btn btn-primary"><i class="ri-inbox-line me-1"></i>Review queue</a>
             </div>
