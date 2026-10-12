@@ -79,12 +79,6 @@ class UsersPass implements Pass
     }
 
     /**
-     * Nothing: a login is brought up to date by its email, not removed and made again, so one
-     * that is signed in stays signed in and keeps its notifications and tokens.
-     */
-    public function clear(ImportContext $context): void {}
-
-    /**
      * @return Collection<int, object>
      */
     private function logins(ImportContext $context): Collection

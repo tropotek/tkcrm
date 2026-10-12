@@ -73,11 +73,6 @@ class ImporterTest extends TestCase
 
                 return $this->count($context);
             }
-
-            public function clear(ImportContext $context): void
-            {
-                DB::table('companies')->delete();
-            }
         };
     }
 
@@ -219,8 +214,9 @@ class ImporterTest extends TestCase
         $this->assertSame(1, DB::table('import_runs')->count());
     }
 
-    public function test_passes_run_in_order_and_are_cleared_in_reverse(): void
+    public function test_passes_run_in_order_after_everything_the_import_fills_is_emptied(): void
     {
+        Expense::factory()->create();
         $log = new ArrayObject;
         $pass = fn (string $name) => new class($name, $log) implements Pass
         {
@@ -239,20 +235,31 @@ class ImporterTest extends TestCase
 
             public function run(ImportContext $context): int
             {
-                $this->log[] = "run {$this->name}";
+                // By the time any pass runs, what was there is gone.
+                $this->log[] = "run {$this->name} with ".DB::table('expenses')->count().' expenses and '.DB::table('companies')->count().' companies';
 
                 return 0;
             }
-
-            public function clear(ImportContext $context): void
-            {
-                $this->log[] = "clear {$this->name}";
-            }
         };
 
-        (new Importer([$pass('Companies'), $pass('Invoices'), $pass('Payments')]))->run($this->context());
+        (new Importer([$pass('Companies'), $pass('Invoices')]))->run($this->context(), force: true);
 
-        $this->assertSame(['clear Payments', 'clear Invoices', 'clear Companies', 'run Companies', 'run Invoices', 'run Payments'], $log->getArrayCopy());
+        $this->assertSame(['run Companies with 0 expenses and 0 companies', 'run Invoices with 0 expenses and 0 companies'], $log->getArrayCopy());
+    }
+
+    public function test_the_tables_are_emptied_in_an_order_the_foreign_keys_allow(): void
+    {
+        // A little of everything that points at something else.
+        $this->seed();
+        $this->assertGreaterThan(0, DB::table('invoice_lines')->count());
+        $this->assertGreaterThan(0, DB::table('task_logs')->count());
+
+        (new Importer([]))->run($this->context(), force: true);
+
+        foreach (Importer::GUARDED as $table) {
+            $this->assertSame(0, DB::table($table)->count(), $table);
+        }
+        $this->assertSame(0, DB::table('domain_pings')->count());
     }
 
     // Records made in tkcrm
@@ -264,13 +271,13 @@ class ImporterTest extends TestCase
 
         $importer = new Importer([$this->companiesPass()]);
 
-        $this->assertSame(['companies' => 3, 'expense_categories' => 1, 'expenses' => 1], $importer->madeHere());
+        $this->assertSame(['expenses' => 1, 'expense_categories' => 1, 'companies' => 3], $importer->madeHere());
 
         try {
             $importer->run($this->context());
             $this->fail('The import ran.');
         } catch (ImportRefused $e) {
-            $this->assertSame('This database holds records made or changed in tkcrm (3 in companies, 1 in expense_categories, 1 in expenses), which the import would replace.', $e->getMessage());
+            $this->assertSame('This database holds records made or changed in tkcrm (1 in expenses, 1 in expense_categories, 3 in companies), which the import would replace.', $e->getMessage());
         }
 
         $this->assertSame(3, Company::count());

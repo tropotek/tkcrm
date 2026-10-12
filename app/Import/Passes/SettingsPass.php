@@ -125,11 +125,6 @@ class SettingsPass implements Pass
     }
 
     /**
-     * Nothing: a setting is written over, and one tktask no longer has keeps what it was given.
-     */
-    public function clear(ImportContext $context): void {}
-
-    /**
      * tktask's HTML wording as tkcrm's plain text: paragraphs and line breaks kept, the rest of
      * the markup gone, and its placeholders renamed.
      *

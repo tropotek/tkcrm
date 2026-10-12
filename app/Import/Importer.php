@@ -9,8 +9,8 @@ use Illuminate\Support\Facades\Schema;
 /**
  * Runs the import passes in order against a tktask database.
  *
- * - A run replaces what earlier runs imported: each pass empties what it fills and fills it
- *   again, with tktask's ids, so running it twice never doubles anything.
+ * - A run replaces what earlier runs imported: every table the import fills is emptied, and the
+ *   passes fill them again with tktask's ids, so running it twice never doubles anything.
  * - A run is all or nothing: every pass is inside one database transaction, so one that fails
  *   part-way leaves the database as it was.
  * - A dry run only counts.
@@ -22,17 +22,20 @@ class Importer
     /** @var list<class-string<Pass>> in the order they depend on each other */
     public const PASSES = [
         Passes\UsersPass::class,
+        Passes\CompaniesPass::class,
+        Passes\ProductsPass::class,
         // Last: its settings point at a company and a product, which must be in first.
         Passes\SettingsPass::class,
     ];
 
     /**
-     * The tables the import fills. A row in one of them that no import brought is a record made
-     * in tkcrm: before any import, every row; after one, a row made or changed since it finished.
+     * The tables the import fills, in the order they can be emptied: a row before the row it
+     * points at. A row in one of them that no import brought is a record made in tkcrm: before any
+     * import, every row; after one, a row made or changed since it finished.
      */
     public const GUARDED = [
-        'companies', 'product_categories', 'products', 'projects', 'task_categories', 'tasks', 'task_logs',
-        'invoices', 'invoice_lines', 'payments', 'recurrings', 'expense_categories', 'expenses', 'domains', 'attachments',
+        'attachments', 'domains', 'expenses', 'expense_categories', 'recurrings', 'payments', 'task_logs', 'tasks',
+        'invoice_lines', 'invoices', 'projects', 'task_categories', 'products', 'product_categories', 'companies',
     ];
 
     /**
@@ -71,8 +74,10 @@ class Importer
         $started = CarbonImmutable::now();
 
         return DB::transaction(function () use ($context, $started) {
-            foreach (array_reverse($this->passes()) as $pass) {
-                $pass->clear($context);
+            // Everything the import fills goes first, whichever passes there are, so that what is
+            // left is tktask's data and nothing else. A domain's pings go with it.
+            foreach (self::GUARDED as $table) {
+                DB::table($table)->delete();
             }
 
             $report = $this->report($context, fn (Pass $pass) => $pass->run($context));
