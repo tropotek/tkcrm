@@ -270,12 +270,12 @@ class ReviewQueueTest extends TestCase
         $this->assertSame(1042, InvoiceNumber::next());
     }
 
-    public function test_the_count_shows_on_the_sidebar_and_the_dashboard_only_while_something_waits(): void
+    public function test_the_count_shows_on_the_dashboard_and_on_the_sidebar_while_something_waits(): void
     {
         $this->get('/')
             ->assertSee('href="'.route('review.index').'"', false)
             ->assertDontSee('rounded-pill float-end', false)
-            ->assertDontSee('Waiting for review');
+            ->assertSeeInOrder(['Waiting for review', '<div class="fs-2 fw-medium">0</div>'], false);
 
         $this->waiting();
         $other = Company::factory()->create()->openInvoice();
@@ -283,7 +283,7 @@ class ReviewQueueTest extends TestCase
 
         $this->get('/')
             ->assertSeeInOrder(['href="'.route('review.index').'"', '<span class="badge bg-danger rounded-pill float-end">2</span>', 'Review queue'], false)
-            ->assertSeeInOrder(['Waiting for review', '2 invoices are waiting']);
+            ->assertSeeInOrder(['Waiting for review', '<div class="fs-2 fw-medium">2</div>'], false);
 
         $this->get('/review')->assertSeeInOrder(['<li class="menuitem-active">', 'href="'.route('review.index').'" class="active"', 'Review queue'], false);
     }

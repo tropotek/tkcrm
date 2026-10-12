@@ -1,22 +1,167 @@
-{{-- Placeholder until the dashboard is built (task 77), but for what is waiting in the review queue. --}}
-@php($waiting = App\Review\ReviewQueue::count())
+{{--
+    The landing page. $dashboard: the App\Dashboard\Dashboard, which worked every figure out.
+    Each figure links to the screen where it is dealt with. The sites that are down join it with
+    site monitoring (task 83).
+
+    The chart (resources/js/charts.js) is given the months' income in cents; the two totals
+    beside it are the same money added up.
+--}}
+@php
+    $count = fn (int $number, string $one, string $many) => $number === 1 ? '1 '.$one : $number.' '.$many;
+    $year = $dashboard->year;
+    $categories = array_column($dashboard->months, 'label');
+    $series = [
+        ['name' => $year->label(), 'data' => array_map(fn ($month) => $month['thisYear']->inCents(), $dashboard->months)],
+        ['name' => $year->previous()->label(), 'data' => array_map(fn ($month) => $month['lastYear']->inCents(), $dashboard->months)],
+    ];
+@endphp
 
 <x-layouts.app title="Dashboard">
-    @if ($waiting > 0)
-        <div class="card">
-            <div class="card-body d-flex flex-wrap align-items-center gap-2">
-                <div class="me-auto">
-                    <h4 class="header-title mb-1">Waiting for review</h4>
-                    <p class="mb-0">{{ $waiting === 1 ? '1 invoice is' : $waiting.' invoices are' }} waiting to be looked over and sent, or reminded.</p>
+    <div class="row">
+        <div class="col-sm-6 col-xl">
+            <a href="{{ route('tasks.index', ['clear' => 1]) }}" class="card text-reset">
+                <div class="card-body">
+                    <div class="text-muted">Open tasks</div>
+                    <div class="fs-2 fw-medium">{{ $dashboard->openTasks }}</div>
+                    <div class="text-muted small">&nbsp;</div>
                 </div>
-                <a href="{{ route('review.index') }}" class="btn btn-primary"><i class="ri-inbox-line me-1"></i>Review queue</a>
-            </div>
+            </a>
         </div>
-    @endif
+        <div class="col-sm-6 col-xl">
+            <a href="{{ route('task-logs.index') }}" class="card text-reset">
+                <div class="card-body">
+                    <div class="text-muted">Unbilled time</div>
+                    <div class="fs-2 fw-medium">{{ $dashboard->unbilled->format() }}</div>
+                    <div class="text-muted small">{{ App\Support\Duration::format($dashboard->unbilledMinutes) }} on open tasks</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl">
+            <a href="{{ route('review.index') }}" class="card text-reset">
+                <div class="card-body">
+                    <div class="text-muted">Waiting for review</div>
+                    <div class="fs-2 fw-medium">{{ $dashboard->waiting }}</div>
+                    <div class="text-muted small">to send or remind</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl">
+            <a href="{{ route('invoices.index', ['show' => 'unpaid']) }}" class="card text-reset">
+                <div class="card-body">
+                    <div class="text-muted">Unpaid</div>
+                    <div class="fs-2 fw-medium">{{ $dashboard->unpaid->format() }}</div>
+                    <div class="text-muted small">{{ $count($dashboard->unpaidCount, 'invoice', 'invoices') }}</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-sm-6 col-xl">
+            <a href="{{ route('invoices.index', ['show' => 'overdue']) }}" class="card text-reset">
+                <div class="card-body">
+                    <div class="text-muted">Overdue</div>
+                    <div @class(['fs-2 fw-medium', 'text-danger' => $dashboard->overdueCount > 0])>{{ $dashboard->overdue->format() }}</div>
+                    <div class="text-muted small">{{ $count($dashboard->overdueCount, 'invoice', 'invoices') }}</div>
+                </div>
+            </a>
+        </div>
+    </div>
 
     <div class="card">
         <div class="card-body">
-            <p class="text-muted mb-0">Nothing more to show yet. Open tasks and income will appear here.</p>
+            <a href="{{ route('reports.sales') }}" class="btn btn-sm btn-link float-end">Sales report</a>
+            <h4 class="header-title mb-3">Income</h4>
+
+            <div class="row">
+                <div class="col-lg-3">
+                    <div class="text-muted">{{ $year->label() }} so far</div>
+                    <div class="fs-2 fw-medium">{{ $dashboard->incomeThisYear->format() }}</div>
+
+                    <div class="text-muted mt-3">{{ $year->previous()->label() }} to the same day</div>
+                    <div class="fs-4">{{ $dashboard->incomeLastYearToDate->format() }}</div>
+
+                    <div class="text-muted mt-3">{{ $year->previous()->label() }} in all</div>
+                    <div class="fs-4">{{ $dashboard->incomeLastYear->format() }}</div>
+
+                    <p class="text-muted small mt-3 mb-0">What was received, month by month, without GST.</p>
+                </div>
+                <div class="col-lg-9">
+                    @if ($dashboard->hasIncome())
+                        <div data-chart="income-by-month" role="img" aria-label="Income each month of {{ $year->label() }} against {{ $year->previous()->label() }}. Each month's figures are in the sales report."
+                            data-categories="{{ json_encode($categories) }}" data-series="{{ json_encode($series) }}"></div>
+                    @else
+                        <p class="text-muted mb-0">Nothing has been received in either year yet.</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-6">
+            <div class="card">
+                <div class="card-body">
+                    <a href="{{ route('tasks.index', ['clear' => 1]) }}" class="btn btn-sm btn-link float-end">All tasks</a>
+                    <h4 class="header-title mb-3">Open tasks</h4>
+
+                    @if ($dashboard->tasks->isEmpty())
+                        <p class="text-muted mb-0">No open tasks.</p>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-sm table-centered mb-0">
+                                <tbody>
+                                    @foreach ($dashboard->tasks as $task)
+                                        <tr>
+                                            <td><a href="{{ route('tasks.show', $task) }}" class="fw-medium">{{ $task->subject }}</a></td>
+                                            <td class="text-muted">{{ $task->company->name }}</td>
+                                            <td class="text-end">
+                                                @unless ($task->priority === App\Enums\TaskPriority::None)
+                                                    <span class="badge bg-{{ $task->priority->colour() }}">{{ $task->priority->label() }}</span>
+                                                @endunless
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                        @if ($dashboard->openTasks > $dashboard->tasks->count())
+                            <p class="text-muted small mt-2 mb-0">And {{ $dashboard->openTasks - $dashboard->tasks->count() }} more.</p>
+                        @endif
+                    @endif
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-6">
+            <div class="card">
+                <div class="card-body">
+                    <a href="{{ route('recurrings.index', ['due' => App\Dashboard\Dashboard::RECURRING_DAYS]) }}" class="btn btn-sm btn-link float-end">In the list</a>
+                    <h4 class="header-title mb-3">Recurring items due</h4>
+
+                    @if ($dashboard->recurrings->isEmpty())
+                        <p class="text-muted mb-0">Nothing is due in the next {{ App\Dashboard\Dashboard::RECURRING_DAYS }} days.</p>
+                    @else
+                        <div class="table-responsive">
+                            <table class="table table-sm table-centered mb-0">
+                                <tbody>
+                                    @foreach ($dashboard->recurrings as $recurring)
+                                        <tr>
+                                            <td><a href="{{ route('recurrings.edit', $recurring) }}" class="fw-medium">{{ $recurring->label() }}</a></td>
+                                            <td class="text-muted">{{ $recurring->company->name }}</td>
+                                            <td class="text-nowrap">{{ $recurring->next_on->format('j M Y') }}</td>
+                                            <td class="text-end text-nowrap">{{ $recurring->billedPrice()->format() }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                                <tfoot>
+                                    <tr class="fw-medium">
+                                        <td colspan="3">In the next {{ App\Dashboard\Dashboard::RECURRING_DAYS }} days</td>
+                                        <td class="text-end text-nowrap">{{ $dashboard->recurringTotal->format() }}</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    @endif
+                </div>
+            </div>
         </div>
     </div>
 </x-layouts.app>
