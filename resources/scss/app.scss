@@ -89,6 +89,10 @@ html:not([data-bs-theme="dark"]) .theme-icon-dark {
     min-height: 320px;
 }
 
+[data-chart][data-chart-type="line"] {
+    min-height: 260px;
+}
+
 html[data-bs-theme="dark"] [data-chart] {
     --series-1: #3987e5;
     --series-2: #d95926;

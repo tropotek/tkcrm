@@ -1,6 +1,6 @@
 {{--
-    A company's own page: its details, then its projects, recurring items and open tasks. Its invoices and
-    domains are added below by the tasks that build those modules.
+    A company's own page: its details, then its projects, recurring items, domains and open tasks. Its invoices are
+    added below by the tasks that build those modules.
 --}}
 <x-layouts.app :title="$company->name">
     <x-slot:actions>
@@ -164,6 +164,41 @@
                                         </td>
                                         <td class="text-nowrap text-muted">{{ $recurring->cycle->label() }}, next {{ $recurring->next_on->format('j M Y') }}</td>
                                         <td class="text-end text-nowrap">{{ $recurring->billedPrice()->format() }}</td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                @endif
+            </div>
+        </div>
+    @endif
+
+    @php($domains = $company->domains()->orderByDesc('active')->orderByRaw('url COLLATE NOCASE')->get())
+
+    @if ($domains->isNotEmpty() || $company->isClient())
+        <div class="card">
+            <div class="card-body">
+                <a href="{{ route('domains.create', ['client' => $company->id]) }}" class="btn btn-sm btn-light float-end">Add domain</a>
+                <h4 class="header-title mb-3">Domains</h4>
+
+                @if ($domains->isEmpty())
+                    <p class="text-muted mb-0">No sites are watched.</p>
+                @else
+                    <div class="table-responsive">
+                        <table class="table table-sm table-centered mb-0">
+                            <tbody>
+                                @foreach ($domains as $domain)
+                                    <tr @class(['text-muted' => ! $domain->active])>
+                                        <td><a href="{{ route('domains.show', $domain) }}" class="fw-medium">{{ $domain->host() }}</a></td>
+                                        <td>
+                                            @if ($domain->active)
+                                                <span class="badge bg-{{ $domain->state->colour() }}">{{ $domain->state->label() }}</span>
+                                            @else
+                                                <span class="badge bg-secondary">Inactive</span>
+                                            @endif
+                                        </td>
+                                        <td class="text-end text-muted">{{ $domain->version }}</td>
                                     </tr>
                                 @endforeach
                             </tbody>

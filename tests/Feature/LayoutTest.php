@@ -36,8 +36,11 @@ class LayoutTest extends TestCase
 
     public function test_a_screen_that_is_not_built_yet_is_listed_greyed_and_is_not_a_link(): void
     {
+        // Every planned screen is built now, so one that is not is added for the test.
+        config(['navigation' => [...config('navigation'), ['label' => 'Time machine', 'icon' => 'ri-time-line', 'route' => 'not.built.yet']]]);
+
         $this->get('/')
-            ->assertSeeInOrder(['<a class="disabled" aria-disabled="true" title="Not built yet">', 'Domains'], false)
+            ->assertSeeInOrder(['<a class="disabled" aria-disabled="true" title="Not built yet">', 'Time machine'], false)
             ->assertDontSee('href=""', false);
     }
 

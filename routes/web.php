@@ -5,6 +5,7 @@ use App\Http\Controllers\BasSummaryController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyStatementController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DomainController;
 use App\Http\Controllers\ExpenseCategoryController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\HealthController;
@@ -97,6 +98,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/products/{product}/lookup', [ProductController::class, 'lookup'])->name('products.lookup');
     Route::resource('products', ProductController::class)->except('show');
     Route::resource('product-categories', ProductCategoryController::class)->except('show');
+
+    // Watched sites. POST …/check asks for a check now; only the checks change a site's state.
+    Route::resource('domains', DomainController::class);
+    Route::post('/domains/{domain}/check', [DomainController::class, 'check'])->name('domains.check');
 
     Route::post('/attachments', [AttachmentController::class, 'store'])->name('attachments.store');
     Route::get('/attachments/{attachment}', [AttachmentController::class, 'show'])->name('attachments.show');
