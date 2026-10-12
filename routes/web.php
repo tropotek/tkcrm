@@ -18,6 +18,7 @@ use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductPriceController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProfitLossController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\RecurringController;
 use App\Http\Controllers\ReviewController;
@@ -107,6 +108,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/mail-log', [MailLogController::class, 'index'])->name('mail-log.index');
     Route::post('/mail-log/{mailLog}/resend', [MailLogController::class, 'resend'])->name('mail-log.resend');
+
+    Route::get('/reports/profit-loss', ProfitLossController::class)->name('reports.profit-loss');
 
     Route::get('/jobs', [JobRunController::class, 'index'])->name('jobs.index');
 

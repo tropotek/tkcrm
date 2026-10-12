@@ -102,7 +102,7 @@ class Settings
                 'type' => 'text',
                 'rules' => ['nullable', 'string', 'max:5000'],
             ],
-            // Applied to net profit for the estimated tax on the profit and loss.
+            // Applied to the taxable profit for the estimated tax on the profit and loss.
             'tax_estimate_rate' => [
                 'default' => 2000,
                 'type' => 'rate',

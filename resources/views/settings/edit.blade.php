@@ -113,7 +113,7 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
-                            <div class="form-text">Applied to net profit for the estimated tax on the profit and loss.</div>
+                            <div class="form-text">Applied to the taxable profit (income less what can be claimed) for the estimated tax on the profit and loss.</div>
                         </div>
 
                         <div class="form-check mb-3">
