@@ -1,0 +1,91 @@
+# tkcrm — the live compose file: the site and its worker, two containers of the one shipped image.
+#
+#   docker compose -f docker-compose-live.yml up -d        start (migrations run automatically)
+#   docker compose -f docker-compose-live.yml down && \
+#   docker compose -f docker-compose-live.yml up -d        upgrade: every start pulls the image again
+#   docker compose -f docker-compose-live.yml logs app     the logs (also in data/logs/, which survives upgrades)
+#   docker compose -f docker-compose-live.yml exec app artisan <command>   run artisan (always as the app user)
+#
+# A new site has no users. Make the first login, or bring the tktask site over:
+#   docker compose -f docker-compose-live.yml exec app artisan tkcrm:create-user you@example.com
+#   docker compose -f docker-compose-live.yml exec app artisan tkcrm:import-tktask --data=/app/data/tktask-data
+#   docker compose -f docker-compose-live.yml exec app artisan tkcrm:verify-import
+#
+# Put settings in a .env file next to this one, e.g.:
+#   TKCRM_TAG=1.0.0              # a version to stay on; latest unless set
+#   TKCRM_PORT=8080
+#   TKCRM_WORKER=0               # the site alone, with nothing billed, mailed or checked: for an import. Remove it to start the worker
+#   APP_URL=https://tkcrm.example.com   # the address in every email's links
+#   SESSION_SECURE_COOKIE=true   # when the site is served over https, either way below
+#   MAIL_MAILER=smtp  MAIL_HOST=…  MAIL_PORT=587  MAIL_USERNAME=…  MAIL_PASSWORD=…  MAIL_FROM_ADDRESS=accounts@example.com
+#   MAIL_REDIRECT_TO=you@example.com   # a trial run: every email goes to this address instead of the client's
+#   TKTASK_DB_HOST=…  TKTASK_DB_PORT=…  TKTASK_DB_DATABASE=…  TKTASK_DB_USERNAME=…  TKTASK_DB_PASSWORD=…   # for the import
+#
+# With no MAIL_MAILER nothing is sent: a message is marked sent and goes nowhere.
+#
+# HTTPS, one of two ways:
+#   A reverse proxy in front that ends TLS (Caddy, nginx), sending to TKCRM_PORT:
+#     TRUSTED_PROXIES=192.168.0.20   # the proxy's address, a comma list, or * for any
+#   Or from the container itself: uncomment the two lines marked "https" below and set
+#     SERVER_NAME=tkcrm.example.com    # a host name turns HTTPS on; ":80", or none, is plain HTTP only
+#   Caddy then gets and renews the certificate itself (ports 80 and 443 must reach it). Otherwise:
+#     TKCRM_TLS=internal               # signed by Caddy's own authority, for a name that is not public
+#     TKCRM_TLS_CERT=/certs/fullchain.pem  TKCRM_TLS_KEY=/certs/privkey.pem   # your own, in ./certs
+#
+# Everything the site keeps is in ./data. Archive that directory and this one's .env to back it up.
+
+name: z-tkcrm
+
+x-tkcrm: &tkcrm
+  # Built from the repo instead: `docker build -t tkcrm .`, then TKCRM_IMAGE=tkcrm and TKCRM_PULL=never.
+  image: ${TKCRM_IMAGE:-ghcr.io/tropotek/tkcrm}:${TKCRM_TAG:-latest}
+  pull_policy: ${TKCRM_PULL:-always}  # stop + start (livesites p, s) picks up a new :latest
+  restart: unless-stopped
+  env_file:
+    - path: .env
+      required: false
+  volumes:
+    # Everything that must survive an upgrade, in one directory:
+    #   data/tkcrm.sqlite         the database (and its WAL files)
+    #   data/private/             attached files and photos, and .app-key, the generated APP_KEY (unless APP_KEY is set in .env)
+    #   data/logs/                daily logs, kept 30 days
+    #   data/caddy/               the certificates Caddy got, when SERVER_NAME is a host name
+    - ./data:/app/data
+    # - ./certs:/certs:ro                      # your own certificate (TKCRM_TLS_CERT, TKCRM_TLS_KEY)
+
+services:
+  app:
+    <<: *tkcrm
+    environment:
+      APP_URL: ${APP_URL:-http://localhost:8080}
+    ports:
+      # Host port → the container's FrankenPHP/Octane on 8080 (plain HTTP; put TLS in a reverse proxy).
+      - "${TKCRM_PORT:-8080}:8080"
+      # - "${TKCRM_HTTPS_PORT:-443}:443"       # https
+      # - "${TKCRM_HTTP_PORT:-80}:80"          # https: the redirect to it, and Caddy's certificate check
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8080/up"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
+
+  # Sends the queued mail and runs the schedule: recurring billing, reminders, the review digest,
+  # site checks every 5 minutes, pruning nightly. Without it nothing is mailed, billed or checked.
+  worker:
+    <<: *tkcrm
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      APP_URL: ${APP_URL:-http://localhost:8080}
+      # The site migrates and makes the key; the worker waits for it and reads both.
+      TKCRM_MIGRATE: "0"
+    command: ["/app/docker/worker.sh"]
+    deploy:
+      replicas: ${TKCRM_WORKER:-1}
+    # A job in hand (an email being sent) gets time to finish when the worker is stopped.
+    stop_grace_period: 60s
+    # No HTTP server here, so the image's own check on /up would always fail.
+    healthcheck:
+      disable: true
