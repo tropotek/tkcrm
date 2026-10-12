@@ -109,7 +109,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/mail-log', [MailLogController::class, 'index'])->name('mail-log.index');
     Route::post('/mail-log/{mailLog}/resend', [MailLogController::class, 'resend'])->name('mail-log.resend');
 
-    Route::get('/reports/profit-loss', ProfitLossController::class)->name('reports.profit-loss');
+    Route::get('/reports/profit-loss', [ProfitLossController::class, 'show'])->name('reports.profit-loss');
+    Route::get('/reports/profit-loss/pdf', [ProfitLossController::class, 'pdf'])->name('reports.profit-loss.pdf');
 
     Route::get('/jobs', [JobRunController::class, 'index'])->name('jobs.index');
 

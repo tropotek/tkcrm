@@ -10,6 +10,7 @@ use App\Models\ExpenseCategory;
 use App\Models\Invoice;
 use App\Models\User;
 use App\Reports\ProfitLoss;
+use App\Reports\ProfitLossPdf;
 use App\Support\FinancialYear;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
@@ -330,10 +331,82 @@ class ProfitLossTest extends TestCase
             ->assertSeeInOrder(['Income', '$1,100.00 received, with $100.00 GST in it', '$1,000.00', 'Hosting', '$220.00 paid, with $20.00 GST in it', '$200.00', '$200.00', 'Net profit', '$800.00'], false);
     }
 
+    public function test_the_pdf_prints_the_same_figures_as_the_page(): void
+    {
+        $owner = Company::factory()->create(['name' => 'Acme Books', 'abn' => '11 222 333 444']);
+        Settings::set('owner_company_id', $owner->id);
+        $this->app->forgetScopedInstances();
+
+        $this->pay($this->invoice(1000000), 1000000, '2026-08-01 10:00');
+        $this->pay($this->invoice(110000, 10000), 110000, '2026-09-01 10:00');
+        $this->spend(ExpenseCategory::factory()->create(['name' => 'Hosting']), 200000, '2026-08-01');
+        $this->spend(ExpenseCategory::factory()->claiming(2500)->create(['name' => 'Phone & internet']), 110000, '2026-08-01', 10000);
+
+        $report = $this->report();
+        $document = app(ProfitLossPdf::class);
+        $html = $document->html($report);
+
+        // Every figure the report holds is in the document, as it is on the page.
+        $page = $this->get('/reports/profit-loss')->getContent();
+
+        foreach ([
+            $report->income, $report->received, $report->incomeGst, $report->expenses, $report->claimable,
+            $report->netProfit, $report->taxableProfit, $report->taxEstimate,
+            ...array_map(fn ($row) => $row->total, $report->categories),
+            ...array_map(fn ($row) => $row->claimable, $report->categories),
+        ] as $figure) {
+            $this->assertStringContainsString($figure->format(), $html);
+            $this->assertStringContainsString($figure->format(), $page);
+        }
+
+        $this->assertSame(['$11,000.00', '$3,000.00', '$2,250.00', '$8,000.00', '$8,750.00', '$1,750.00'], [
+            $report->income->format(), $report->expenses->format(), $report->claimable->format(),
+            $report->netProfit->format(), $report->taxableProfit->format(), $report->taxEstimate->format(),
+        ]);
+
+        foreach (['Acme Books', 'ABN 11 222 333 444', 'Profit and loss', '2026–27', '1 Jul 2026', '30 Jun 2027', 'Printed', '15 Aug 2026', '2 payments received', 'Phone &amp; internet', '25%', 'Estimated tax at 20%', 'Every figure leaves GST out'] as $text) {
+            $this->assertStringContainsString($text, $html);
+        }
+
+        // It stands alone: nothing fetched and no script.
+        $this->assertStringNotContainsString('<script', $html);
+        $this->assertStringNotContainsString('http', $html);
+        $this->assertSame('Profit and loss 2026–27', $document->title($report));
+        $this->assertSame('profit-and-loss-2026-2027.pdf', $document->filename($report));
+    }
+
+    public function test_the_pdf_is_served_for_the_year_asked_for(): void
+    {
+        $this->spend(ExpenseCategory::factory()->create(['name' => 'Hosting']), 4400, '2025-08-01');
+
+        $this->get('/reports/profit-loss?year=2026')->assertSee(e(route('reports.profit-loss.pdf', ['year' => 2026])), false);
+
+        $response = $this->get('/reports/profit-loss/pdf?year=2026');
+
+        $response->assertOk()
+            ->assertHeader('Content-Type', 'application/pdf')
+            ->assertHeader('Content-Disposition', 'inline; filename="profit-and-loss-2025-2026.pdf"');
+        $this->assertStringStartsWith('%PDF', $response->getContent());
+
+        $this->get('/reports/profit-loss/pdf?download=1')
+            ->assertHeader('Content-Disposition', 'attachment; filename="profit-and-loss-2026-2027.pdf"');
+    }
+
+    public function test_a_year_without_gst_says_nothing_of_it_in_the_pdf(): void
+    {
+        $this->pay($this->invoice(10000), 10000, '2026-08-01 10:00');
+
+        $html = app(ProfitLossPdf::class)->html($this->report());
+
+        $this->assertStringNotContainsString('GST', $html);
+        $this->assertStringContainsString('No expenses in 2026–27.', $html);
+    }
+
     public function test_a_guest_is_sent_to_the_login_screen(): void
     {
         auth()->logout();
 
         $this->get('/reports/profit-loss')->assertRedirect(route('login'));
+        $this->get('/reports/profit-loss/pdf')->assertRedirect(route('login'));
     }
 }

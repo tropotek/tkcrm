@@ -44,7 +44,7 @@ return [
     ['label' => 'Domains', 'icon' => 'ri-global-line', 'route' => 'domains.index'],
 
     ['title' => 'Reports'],
-    ['label' => 'Profit and loss', 'icon' => 'ri-line-chart-line', 'route' => 'reports.profit-loss', 'active' => ['reports.profit-loss']],
+    ['label' => 'Profit and loss', 'icon' => 'ri-line-chart-line', 'route' => 'reports.profit-loss', 'active' => ['reports.profit-loss', 'reports.profit-loss.*']],
     ['label' => 'Sales', 'icon' => 'ri-bar-chart-2-line', 'route' => 'reports.sales', 'active' => ['reports.sales']],
     ['label' => 'BAS summary', 'icon' => 'ri-government-line', 'route' => 'reports.bas', 'active' => ['reports.bas']],
 

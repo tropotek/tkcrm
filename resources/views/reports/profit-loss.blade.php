@@ -18,6 +18,7 @@
                 @endforeach
             </select>
         </form>
+        <a href="{{ route('reports.profit-loss.pdf', ['year' => $year->year]) }}" target="_blank" rel="noopener" class="btn btn-light align-top"><i class="ri-file-pdf-2-line me-1"></i>PDF</a>
     </x-slot:actions>
 
     <div class="row">
