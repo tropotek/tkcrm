@@ -98,6 +98,16 @@ class Company extends Model
     }
 
     /**
+     * What was bought from it, as a supplier.
+     *
+     * @return HasMany<Expense, $this>
+     */
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    /**
      * The invoice that what the company is billed next goes onto: its open invoice, made now if
      * it has none. With more than one open, it is the oldest.
      */

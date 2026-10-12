@@ -7,6 +7,8 @@ use App\Enums\Cycle;
 use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
 use App\Models\Company;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\InvoiceLine;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -161,6 +163,21 @@ class DatabaseSeederTest extends TestCase
         $plan = Recurring::where('description', 'Site care plan')->sole();
         $this->assertNull($plan->product_id);
         $this->assertSame('$180.00', $plan->billedPrice()->format());
+    }
+
+    public function test_it_makes_expense_categories_and_expenses_however_often_it_is_seeded(): void
+    {
+        $this->runSeeder();
+        $this->runSeeder();
+
+        $this->assertSame(['Hosting', 'Office supplies', 'Phone and internet', 'Software'], ExpenseCategory::orderBy('name')->pluck('name')->all());
+        $this->assertSame(5000, ExpenseCategory::where('name', 'Phone and internet')->sole()->claim_ratio);
+        $this->assertSame(6, Expense::count());
+
+        $internet = Expense::where('invoice_number', 'BG-20455')->sole();
+        $this->assertSame(['Bluegum Hosting', 'Phone and internet', '$89.00', '$44.50'], [$internet->company->name, $internet->category->name, $internet->total->format(), $internet->claimable()->format()]);
+        $this->assertTrue($internet->company->isSupplier());
+        $this->assertSame('-$62.00', Expense::where('invoice_number', 'PB-7731-CR')->sole()->total->format());
     }
 
     public function test_it_seeds_nothing_in_production(): void

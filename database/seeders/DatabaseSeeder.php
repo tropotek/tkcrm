@@ -6,6 +6,8 @@ use App\Enums\CompanyType;
 use App\Enums\Cycle;
 use App\Enums\TaskPriority;
 use App\Models\Company;
+use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use App\Models\Project;
@@ -43,6 +45,7 @@ class DatabaseSeeder extends Seeder
         $this->projects();
         $this->tasks();
         $this->recurrings();
+        $this->expenses();
     }
 
     /**
@@ -206,6 +209,45 @@ class DatabaseSeeder extends Seeder
                 'description' => $description,
                 'start_on' => $start,
             ] + $more);
+        }
+    }
+
+    /**
+     * Expense categories, found again by name, and a few expenses from the seeded suppliers, found
+     * again by the supplier's invoice number: in this financial year and the last, one in a
+     * category claimed in part, and a refund. Amounts are in cents, with no GST in them.
+     */
+    private function expenses(): void
+    {
+        // Name, then the basis points of it that can be claimed.
+        foreach (['Hosting' => 10000, 'Software' => 10000, 'Office supplies' => 10000, 'Phone and internet' => 5000] as $name => $ratio) {
+            ExpenseCategory::firstOrCreate(['name' => $name], ['claim_ratio' => $ratio]);
+        }
+
+        // Supplier, category, their invoice number, description, days ago, total.
+        $expenses = [
+            ['Bluegum Hosting', 'Hosting', 'BG-20417', 'Server, one year', 40, 132000],
+            ['Bluegum Hosting', 'Hosting', 'BG-19022', 'Server, one year', 405, 126000],
+            ['Bluegum Hosting', 'Phone and internet', 'BG-20455', 'Office internet, one month', 12, 8900],
+            ['Paperbark Office Supplies', 'Office supplies', 'PB-7731', 'Printer paper and toner', 25, 14650],
+            ['Paperbark Office Supplies', 'Office supplies', 'PB-7731-CR', 'Toner returned', 20, -6200],
+            ['Paperbark Office Supplies', 'Software', 'PB-7604', 'Accounting software, one year', 200, 59900],
+        ];
+
+        foreach ($expenses as [$supplier, $category, $number, $description, $daysAgo, $total]) {
+            $company = Company::where('name', $supplier)->first();
+
+            if (! $company || Expense::where('invoice_number', $number)->exists()) {
+                continue;
+            }
+
+            Expense::factory()->for($company)->create([
+                'expense_category_id' => ExpenseCategory::where('name', $category)->value('id'),
+                'invoice_number' => $number,
+                'description' => $description,
+                'purchased_on' => today()->subDays($daysAgo),
+                'total' => $total,
+            ]);
         }
     }
 }
