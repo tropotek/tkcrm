@@ -2,8 +2,10 @@
 
 namespace App\Dashboard;
 
+use App\Enums\DomainState;
 use App\Enums\InvoiceStatus;
 use App\Enums\TaskStatus;
+use App\Models\Domain;
 use App\Models\Invoice;
 use App\Models\Recurring;
 use App\Models\Task;
@@ -42,6 +44,8 @@ final readonly class Dashboard
      * @param  list<array{label: string, thisYear: Money, lastYear: Money}>  $months  July first
      * @param  Collection<int, Recurring>  $recurrings  active items due within the days ahead, soonest first
      * @param  Money  $recurringTotal  what those will bill at today's prices
+     * @param  int  $sites  how many sites are being watched
+     * @param  Collection<int, Domain>  $sitesDown  the watched sites that are down, the longest down first, each with its company
      */
     public function __construct(
         public int $openTasks,
@@ -60,6 +64,8 @@ final readonly class Dashboard
         public array $months,
         public Collection $recurrings,
         public Money $recurringTotal,
+        public int $sites,
+        public Collection $sitesDown,
     ) {}
 
     /**
@@ -113,6 +119,8 @@ final readonly class Dashboard
             months: $months,
             recurrings: $recurrings,
             recurringTotal: Money::sum($recurrings->map(fn (Recurring $recurring) => $recurring->billedPrice())),
+            sites: Domain::query()->active()->count(),
+            sitesDown: Domain::query()->active()->inState(DomainState::Down)->with('company')->orderBy('state_changed_at')->orderBy('id')->get(),
         );
     }
 

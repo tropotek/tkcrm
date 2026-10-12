@@ -10,6 +10,8 @@
             {{ $message->kind->label() }}
             @if ($showRelated && $message->related instanceof App\Models\Invoice)
                 <div class="small"><a href="{{ route('invoices.show', $message->related) }}">{{ $message->related->number ? 'Invoice '.$message->related->number : 'Open invoice' }}</a></div>
+            @elseif ($showRelated && $message->related instanceof App\Models\Domain)
+                <div class="small"><a href="{{ route('domains.show', $message->related) }}">{{ $message->related->host() }}</a></div>
             @elseif ($showRelated && $message->related instanceof App\Models\Company)
                 <div class="small"><a href="{{ route('companies.show', $message->related) }}">{{ $message->related->name }}</a></div>
             @endif

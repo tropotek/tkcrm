@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Mail\RedirectAllMail;
 use App\Models\Company;
+use App\Models\Domain;
 use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Recurring;
@@ -48,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
             'company' => Company::class,
             'recurring' => Recurring::class,
             'expense' => Expense::class,
+            'domain' => Domain::class,
         ]);
     }
 }

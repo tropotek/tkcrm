@@ -61,6 +61,46 @@ final class DomainHistory
     }
 
     /**
+     * When the domain's current run of failed checks began: its first failed check since it last
+     * passed one. With `before`, the run that ended at the last pass before that moment, for a
+     * site that has just come back. Null where there is no such run.
+     */
+    public static function outageBegan(Domain $domain, ?CarbonImmutable $before = null): ?CarbonImmutable
+    {
+        $pings = fn () => DomainPing::query()->where('domain_id', $domain->id);
+
+        // Coming back: look past the check that has just passed to the run of failures before it.
+        $until = $before === null
+            ? null
+            : $pings()->where('ok', true)->where('checked_at', '<=', $before)->orderByDesc('checked_at')->orderByDesc('id')->first();
+
+        $failed = $pings()->where('ok', false)
+            ->when($until, fn ($query) => $query->where(fn ($query) => $query
+                ->where('checked_at', '<', $until->checked_at)
+                ->orWhere(fn ($query) => $query->where('checked_at', $until->checked_at)->where('id', '<', $until->id))));
+
+        $lastFailed = (clone $failed)->orderByDesc('checked_at')->orderByDesc('id')->first();
+
+        if ($lastFailed === null) {
+            return null;
+        }
+
+        // The pass that came before that run, if there was one.
+        $passed = $pings()->where('ok', true)
+            ->where(fn ($query) => $query
+                ->where('checked_at', '<', $lastFailed->checked_at)
+                ->orWhere(fn ($query) => $query->where('checked_at', $lastFailed->checked_at)->where('id', '<', $lastFailed->id)))
+            ->orderByDesc('checked_at')->orderByDesc('id')->first();
+
+        return (clone $failed)
+            ->when($passed, fn ($query) => $query->where(fn ($query) => $query
+                ->where('checked_at', '>', $passed->checked_at)
+                ->orWhere(fn ($query) => $query->where('checked_at', $passed->checked_at)->where('id', '>', $passed->id))))
+            ->orderBy('checked_at')->orderBy('id')
+            ->first()?->checked_at;
+    }
+
+    /**
      * Each version the site has reported, with when it was first seen, the latest first.
      *
      * @return list<array{version: string, since: CarbonImmutable}>

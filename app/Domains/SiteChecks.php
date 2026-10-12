@@ -226,7 +226,8 @@ class SiteChecks
         $domain->unsetRelation('pings');
 
         if ($domain->state !== $before) {
-            event(new DomainStateChanged($domain, $before, $domain->state, $since));
+            // Telling the owner must not stop the rest of the sites being checked.
+            rescue(fn () => event(new DomainStateChanged($domain, $before, $domain->state, $since)));
         }
 
         return $ping;

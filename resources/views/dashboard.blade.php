@@ -1,7 +1,7 @@
 {{--
     The landing page. $dashboard: the App\Dashboard\Dashboard, which worked every figure out.
-    Each figure links to the screen where it is dealt with. The sites that are down join it with
-    site monitoring (task 83).
+    Each figure links to the screen where it is dealt with. The sites that are down are listed
+    under the figures while there are any.
 
     The chart (resources/js/charts.js) is given the months' income in cents; the two totals
     beside it are the same money added up.
@@ -64,6 +64,38 @@
             </a>
         </div>
     </div>
+
+    @if ($dashboard->sitesDown->isNotEmpty())
+        <div class="card border border-danger">
+            <div class="card-body">
+                <a href="{{ route('domains.index', ['state' => 'down']) }}" class="btn btn-sm btn-link float-end">In the list</a>
+                <h4 class="header-title text-danger mb-3">Sites that are down</h4>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-centered mb-0">
+                        <tbody>
+                            @foreach ($dashboard->sitesDown as $domain)
+                                <tr>
+                                    <td><a href="{{ route('domains.show', $domain) }}" class="fw-medium">{{ $domain->host() }}</a></td>
+                                    <td class="text-muted">{{ $domain->company->name }}</td>
+                                    <td class="text-nowrap">Down since <x-date :value="$domain->state_changed_at" format="j M, g:ia" /></td>
+                                    <td class="text-end text-nowrap text-muted">
+                                        @if ($domain->last_ok_at)
+                                            Last answered <x-date :value="$domain->last_ok_at" format="j M, g:ia" />
+                                        @else
+                                            Has never answered
+                                        @endif
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    @elseif ($dashboard->sites > 0)
+        <p class="text-muted"><i class="ri-checkbox-circle-line text-success me-1"></i>{{ $dashboard->sites === 1 ? 'The 1 watched site is' : 'All '.$dashboard->sites.' watched sites are' }} <a href="{{ route('domains.index') }}">up</a>.</p>
+    @endif
 
     <div class="card">
         <div class="card-body">
