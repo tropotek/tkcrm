@@ -50,5 +50,6 @@ return [
 
     ['title' => 'Admin'],
     ['label' => 'Mail log', 'icon' => 'ri-mail-send-line', 'route' => 'mail-log.index'],
+    ['label' => 'Scheduled jobs', 'icon' => 'ri-timer-line', 'route' => 'jobs.index'],
     ['label' => 'Settings', 'icon' => 'ri-settings-3-line', 'route' => 'settings.edit'],
 ];

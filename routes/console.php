@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Schedule;
+use App\Schedule\ScheduledJobs;
 
 // The schedule runs only in the worker container (docker compose --profile worker), never in the app.
-// Times are UTC.
+// The jobs, and when each runs, are listed in App\Schedule\ScheduledJobs.
 
-Schedule::command('tkcrm:prune-notifications')->dailyAt('03:25')->withoutOverlapping(10);
+ScheduledJobs::register();

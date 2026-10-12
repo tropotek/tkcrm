@@ -8,6 +8,7 @@ use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\InvoiceEmailController;
 use App\Http\Controllers\InvoiceLineController;
 use App\Http\Controllers\InvoiceReminderController;
+use App\Http\Controllers\JobRunController;
 use App\Http\Controllers\MailLogController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
@@ -101,6 +102,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/mail-log', [MailLogController::class, 'index'])->name('mail-log.index');
     Route::post('/mail-log/{mailLog}/resend', [MailLogController::class, 'resend'])->name('mail-log.resend');
+
+    Route::get('/jobs', [JobRunController::class, 'index'])->name('jobs.index');
 
     Route::get('/settings', [SettingsController::class, 'edit'])->name('settings.edit');
     Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
