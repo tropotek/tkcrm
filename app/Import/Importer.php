@@ -27,6 +27,8 @@ class Importer
         Passes\ProjectsPass::class,
         Passes\TasksPass::class,
         Passes\InvoicesPass::class,
+        Passes\RecurringsPass::class,
+        Passes\ExpensesPass::class,
         // Last: its settings point at a company and a product, which must be in first.
         Passes\SettingsPass::class,
     ];
