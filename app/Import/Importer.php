@@ -24,6 +24,8 @@ class Importer
         Passes\UsersPass::class,
         Passes\CompaniesPass::class,
         Passes\ProductsPass::class,
+        Passes\ProjectsPass::class,
+        Passes\TasksPass::class,
         // Last: its settings point at a company and a product, which must be in first.
         Passes\SettingsPass::class,
     ];

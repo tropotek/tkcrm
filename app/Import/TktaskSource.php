@@ -2,6 +2,7 @@
 
 namespace App\Import;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Connection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -48,6 +49,18 @@ class TktaskSource
         'auth_login_attempt' => ['attempt_id', 'username', 'ip', 'created'],
         'guest_token' => ['token', 'pages', 'payload', 'ttl_mins', 'created', 'expiry'],
     ];
+
+    /**
+     * The timezone of tktask's DATETIME columns (a time log's `start_at`, a payment's `received_at`),
+     * which hold the wall-clock time tktask's PHP wrote. Its TIMESTAMP columns are UTC.
+     *
+     * Melbourne is what tktask's own `config.php` sets (`php.date.timezone`, for PHP and for its
+     * MySQL session), and the live data agrees: a time log's start is 11 hours ahead of its UTC
+     * `created` for most rows and 10 for the rest, which is Melbourne with daylight saving. The
+     * owner thinks it may have been Brisbane for a while, which would put a summer time an hour
+     * out; they accept that.
+     */
+    public const TIMEZONE = 'Australia/Melbourne';
 
     /** The tables that hold no business data and are not imported. */
     public const NOT_IMPORTED = ['project_user', 'notify', 'status_log', 'auth_remember', 'auth_login_attempt', 'guest_token'];
@@ -132,6 +145,14 @@ class TktaskSource
         }
 
         return $differences;
+    }
+
+    /**
+     * A moment from one of tktask's DATETIME columns, as the UTC moment tkcrm stores. Null stays null.
+     */
+    public static function moment(?string $local): ?string
+    {
+        return blank($local) ? null : CarbonImmutable::parse($local, self::TIMEZONE)->utc()->toDateTimeString();
     }
 
     /**
