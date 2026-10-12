@@ -24,6 +24,7 @@ use RecursiveIteratorIterator;
  *   row at all: `task/<year>/<id>/…` and `expense/<year>/<id>/…`. Those are found by their path
  *   and attached to that task or expense.
  * - Any other file under `data` that no row names is reported, so nothing is left behind unseen.
+ *   The file browser's own thumbnails and trash (`.tmb`, `.trash`) are not files of the business's.
  *
  * Without `--data` no file can be read: the rows are counted and reported, and nothing is attached.
  */
@@ -118,7 +119,10 @@ class FilesPass implements Pass
             $relative = substr($file->getPathname(), strlen($context->dataPath) + 1);
             $parts = explode('/', $relative);
 
-            if (! $file->isFile() || isset($named[$relative]) || in_array($parts[0], self::HOUSEKEEPING, true) || str_starts_with(basename($relative), '.')) {
+            // A dot file, or anything in a dot folder: the file browser's own thumbnails (.tmb) and trash (.trash).
+            $hidden = array_filter($parts, fn (string $part) => str_starts_with($part, '.')) !== [];
+
+            if (! $file->isFile() || isset($named[$relative]) || in_array($parts[0], self::HOUSEKEEPING, true) || $hidden) {
                 continue;
             }
 

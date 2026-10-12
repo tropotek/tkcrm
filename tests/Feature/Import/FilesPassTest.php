@@ -221,6 +221,9 @@ class FilesPassTest extends TestCase
         $this->file('private/cache/routes.php', '<?php return [];');
         $this->file('tmp/upload.part');
         $this->file('task/2025/41/.DS_Store', 'junk');
+        // The file browser's thumbnails and trash, inside a task's own folder.
+        $this->file('task/2025/41/media/.tmb/l1_abc.png', $this->jpeg());
+        $this->file('media/.trash/old.png', $this->jpeg());
 
         $context = $this->import();
 
