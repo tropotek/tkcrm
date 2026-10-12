@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Casts\MoneyCast;
 use App\Enums\Cycle;
+use App\Recurrings\CycleDates;
 use App\Support\Money;
 use Carbon\CarbonImmutable;
 use Database\Factories\RecurringFactory;
@@ -110,6 +111,14 @@ class Recurring extends Model
     public function hasRun(): bool
     {
         return $this->count > 0 || $this->previous_on !== null;
+    }
+
+    /**
+     * The days it bills on, worked out from its start date and cycle.
+     */
+    public function dates(): CycleDates
+    {
+        return new CycleDates($this->start_on, $this->cycle);
     }
 
     /**

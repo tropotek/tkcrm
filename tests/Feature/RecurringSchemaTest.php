@@ -227,6 +227,15 @@ class RecurringSchemaTest extends TestCase
         $this->assertSame([$recurring->id], Recurring::active()->pluck('id')->all());
     }
 
+    public function test_its_dates_come_from_its_start_and_cycle(): void
+    {
+        $recurring = Recurring::factory()->cycle(Cycle::Month)->create(['start_on' => '2026-01-31'])->fresh();
+
+        $this->assertSame('2026-01-31', $recurring->dates()->date(0)->toDateString());
+        $this->assertSame('2026-02-28', $recurring->dates()->date(1)->toDateString());
+        $this->assertSame('28 Feb 2026 to 30 Mar 2026', $recurring->dates()->period(1)->label());
+    }
+
     public function test_an_invoice_line_can_name_it_as_its_source(): void
     {
         $this->assertSame('recurring', (new Recurring)->getMorphClass());
