@@ -60,7 +60,7 @@ Do not run `php artisan migrate:fresh` or `db:wipe` while the app container is u
 
 The seeder makes one dev login, `owner@example.com` with the password `password`.
 
-`composer test` clears the config cache and runs the suite. Tests run against an in-memory SQLite database.
+`composer test` clears the config cache and runs the suite. Tests run against an in-memory SQLite database. The suite runs in one process and peaks near 115 MB, so `phpunit.xml` gives it a 512M memory limit; PHP's 128M default was passed once (in a dompdf test) at 1,125 tests.
 
 ## Layout
 
