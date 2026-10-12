@@ -367,8 +367,10 @@ class ImporterTest extends TestCase
         $this->assertSame(0, Company::count());
     }
 
-    public function test_with_no_passes_yet_the_command_says_so(): void
+    public function test_an_importer_with_no_passes_says_so(): void
     {
+        $this->app->instance(Importer::class, new Importer([]));
+
         $this->artisan('tkcrm:import-tktask')
             ->expectsOutputToContain('There are no import passes yet, so nothing was imported.')
             ->assertSuccessful();

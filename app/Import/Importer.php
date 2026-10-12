@@ -20,7 +20,11 @@ use Illuminate\Support\Facades\Schema;
 class Importer
 {
     /** @var list<class-string<Pass>> in the order they depend on each other */
-    public const PASSES = [];
+    public const PASSES = [
+        Passes\UsersPass::class,
+        // Last: its settings point at a company and a product, which must be in first.
+        Passes\SettingsPass::class,
+    ];
 
     /**
      * The tables the import fills. A row in one of them that no import brought is a record made
