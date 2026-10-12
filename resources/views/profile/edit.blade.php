@@ -122,4 +122,82 @@
             </div>
         </div>
     </div>
+
+    <div class="card" id="api-tokens">
+        <div class="card-body">
+            <h4 class="header-title mb-1">API tokens</h4>
+            <p class="text-muted">
+                A token lets a program read what you see here: clients, invoices, tasks, expenses, reports and site status.
+                It can read and nothing else: it cannot change a record, issue an invoice or send an email. Revoke one and it stops working at once.
+            </p>
+
+            @if (Route::has('mcp'))
+                <p class="text-muted">
+                    To let Claude read them, register the MCP server with Claude Code, with a token in place of <code>YOUR-TOKEN</code>:<br>
+                    <code>claude mcp add --transport http tkcrm {{ url('/mcp') }} --header "Authorization: Bearer YOUR-TOKEN"</code>
+                </p>
+            @endif
+
+            @if (session('api_token'))
+                <div class="alert alert-success" role="alert" id="new-api-token">
+                    <div class="mb-1"><strong>Your new token.</strong> Copy it now: it is not shown again.</div>
+                    <input type="text" readonly class="form-control font-monospace" value="{{ session('api_token') }}" onfocus="this.select()" aria-label="The new token">
+                </div>
+            @endif
+
+            <form method="POST" action="{{ route('profile.tokens.store') }}" class="row g-2 mb-3">
+                @csrf
+                <div class="col-sm-6 col-lg-4">
+                    <label for="token_name" class="visually-hidden">Token name</label>
+                    <input type="text" id="token_name" name="token_name" value="{{ old('token_name') }}" required maxlength="100" placeholder="What it is for, such as Claude"
+                        @class(['form-control', 'is-invalid' => $errors->apiToken->has('token_name')])>
+                    @error('token_name', 'apiToken')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">Make a token</button>
+                </div>
+            </form>
+
+            <div class="table-responsive">
+                <table class="table table-centered mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Made</th>
+                            <th>Last used</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($tokens as $token)
+                            <tr>
+                                <td>{{ $token->name }}</td>
+                                <td class="text-nowrap"><x-date :value="$token->created_at" /></td>
+                                <td class="text-nowrap">
+                                    @if ($token->last_used_at)
+                                        <x-date :value="$token->last_used_at" />
+                                    @else
+                                        <span class="text-muted">Never</span>
+                                    @endif
+                                </td>
+                                <td class="text-end">
+                                    <form method="POST" action="{{ route('profile.tokens.destroy', $token) }}" onsubmit="return confirm('Revoke this token? Anything using it stops working at once.')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Revoke</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-muted">No tokens yet.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </x-layouts.app>

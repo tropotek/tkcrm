@@ -14,6 +14,7 @@ The live tktask at `https://task.ttek.org/` sends real invoices. Nothing here co
 
 - PHP 8.4, Laravel 13, Octane on FrankenPHP
 - SQLite in WAL mode
+- Laravel Sanctum for API tokens
 - Vite, Bootstrap 5 with the Minton default skin (light and dark), ApexCharts for charts, htmx and Alpine
 - dompdf for PDFs, built in-process
 - PHPUnit for tests (not Pest), Pint for code style
@@ -95,6 +96,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - A dialog is loaded by htmx into the one shared modal: the trigger has `hx-get="…" hx-target="#app-modal-content"`, and the route returns an `<x-modal title="…" :action="…">`. A 422 reply re-renders the form in the dialog; a reply with the header `HX-Trigger: modal-close` closes it. htmx requests carry the CSRF token automatically.
 - Flash messages: `->with('success' | 'error' | 'warning' | 'info', '…')`.
 - Every page needs a signed-in user: put its route inside the `auth` group in `routes/web.php`. The login and password reset routes are in `routes/auth.php`. There is no registration. `RoutesNeedLoginTest` lists the only routes open to a guest and fails when another appears.
+- API tokens are Laravel Sanctum's, made and revoked on the profile page (`ApiTokenController`), each with the one ability `read`. An API route is behind `['auth:sanctum', 'abilities:read']`. A token is never a login to the screens and the web session is never a login to the API; Sanctum's own cookie route is off (`sanctum.routes`).
 - Private files are never served by a signed URL (`serve` is off on the `local` disk): a controller behind the login sends them.
 - Login and password recovery are throttled per email and IP address together, with the limits in `config/tkcrm.php`. Recovery and reset answer the same whether or not the email has an account; keep it that way when changing them.
 - Emails are stored in lower case and SQLite compares them exactly, so lower-case an email before looking a user up by it.

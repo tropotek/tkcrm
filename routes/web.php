@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ApiTokenController;
 use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\BasSummaryController;
 use App\Http\Controllers\CompanyController;
@@ -45,6 +46,9 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::put('/profile/password', [ProfileController::class, 'updatePassword'])->name('profile.password');
     Route::get('/profile/photo', [ProfileController::class, 'photo'])->name('profile.photo');
+    // The user's own API tokens, on the profile page. A token is shown once, when it is made.
+    Route::post('/profile/tokens', [ApiTokenController::class, 'store'])->name('profile.tokens.store');
+    Route::delete('/profile/tokens/{token}', [ApiTokenController::class, 'destroy'])->name('profile.tokens.destroy');
 
     // Companies are never deleted here: a client or supplier that is done with is made inactive.
     Route::resource('companies', CompanyController::class)->except('destroy');

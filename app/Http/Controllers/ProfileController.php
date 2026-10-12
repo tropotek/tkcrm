@@ -20,6 +20,8 @@ class ProfileController extends Controller
         return view('profile.edit', [
             'user' => $request->user(),
             'timezones' => DateTimeZone::listIdentifiers(),
+            // The user's own API tokens, the newest first.
+            'tokens' => $request->user()->tokens()->latest()->latest('id')->get(),
         ]);
     }
 
