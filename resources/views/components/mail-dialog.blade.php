@@ -15,10 +15,11 @@
     envelope, documents, html: the message's Envelope, its documents (as InvoiceMail::documents()
         gives them) and its HTML. Never the Mailable: a view renders one into a string.
     last: the App\Models\MailLog of the last time this was emailed, or null.
+    send: what the button says, when sending does more than send ("Issue and send").
     note-error: what is wrong with the note. A component does not see the errors a controller puts
         on the view it returns, so the dialog's own view hands it on: :note-error="$errors->first('note')".
 --}}
-@props(['title', 'action', 'refresh', 'problem' => null, 'fix' => null, 'envelope' => null, 'documents' => [], 'html' => null, 'note' => null, 'noteError' => null, 'last' => null])
+@props(['title', 'action', 'refresh', 'problem' => null, 'fix' => null, 'envelope' => null, 'documents' => [], 'html' => null, 'note' => null, 'noteError' => null, 'last' => null, 'send' => 'Send'])
 
 @php
     $redirectTo = config('tkcrm.mail.redirect_to');
@@ -96,7 +97,7 @@
         <iframe id="mail-preview" title="The message" sandbox srcdoc="{{ $html }}" class="border rounded w-100" style="height: 45vh"></iframe>
 
         <x-slot:footer>
-            <button type="submit" class="btn btn-primary"><i class="ri-mail-send-line me-1"></i>Send</button>
+            <button type="submit" class="btn btn-primary"><i class="ri-mail-send-line me-1"></i>{{ $send }}</button>
         </x-slot:footer>
     @endif
 </x-modal>

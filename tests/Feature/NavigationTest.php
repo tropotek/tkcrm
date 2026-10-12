@@ -29,7 +29,7 @@ class NavigationTest extends TestCase
         ]]);
 
         $this->get('/nav/things')->assertExactJson([
-            ['label' => 'Home', 'icon' => 'ri-home-line', 'url' => url('/nav/home'), 'active' => false],
+            ['label' => 'Home', 'icon' => 'ri-home-line', 'url' => url('/nav/home'), 'active' => false, 'badge' => 0],
         ]);
     }
 
@@ -41,8 +41,8 @@ class NavigationTest extends TestCase
         ]]);
 
         $this->get('/nav/home')->assertExactJson([
-            ['label' => 'Home', 'icon' => 'ri-home-line', 'url' => url('/nav/home'), 'active' => true],
-            ['label' => 'Later', 'icon' => 'ri-time-line', 'url' => null, 'active' => false],
+            ['label' => 'Home', 'icon' => 'ri-home-line', 'url' => url('/nav/home'), 'active' => true, 'badge' => 0],
+            ['label' => 'Later', 'icon' => 'ri-time-line', 'url' => null, 'active' => false, 'badge' => 0],
         ]);
     }
 
@@ -105,9 +105,9 @@ class NavigationTest extends TestCase
 
         $this->get('/nav/things')->assertExactJson([
             ['title' => 'Main'],
-            ['label' => 'Home', 'icon' => 'ri-home-line', 'url' => url('/nav/home'), 'active' => false],
+            ['label' => 'Home', 'icon' => 'ri-home-line', 'url' => url('/nav/home'), 'active' => false, 'badge' => 0],
             ['title' => 'Planned'],
-            ['label' => 'Later', 'icon' => 'ri-time-line', 'url' => null, 'active' => false],
+            ['label' => 'Later', 'icon' => 'ri-time-line', 'url' => null, 'active' => false, 'badge' => 0],
         ]);
     }
 

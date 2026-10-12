@@ -37,7 +37,7 @@ class LayoutTest extends TestCase
     public function test_a_screen_that_is_not_built_yet_is_listed_greyed_and_is_not_a_link(): void
     {
         $this->get('/')
-            ->assertSeeInOrder(['<a class="disabled" aria-disabled="true" title="Not built yet">', 'Invoices'], false)
+            ->assertSeeInOrder(['<a class="disabled" aria-disabled="true" title="Not built yet">', 'BAS summary'], false)
             ->assertDontSee('href=""', false);
     }
 

@@ -24,6 +24,9 @@
                         <li @class(['menuitem-active' => $item['active']])>
                             <a href="{{ $item['url'] }}" @class(['active' => $item['active']])>
                                 <i class="{{ $item['icon'] }}"></i>
+                                @if ($item['badge'] > 0)
+                                    <span class="badge bg-danger rounded-pill float-end">{{ $item['badge'] }}</span>
+                                @endif
                                 <span> {{ $item['label'] }} </span>
                             </a>
                         </li>

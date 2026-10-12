@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Review\ReviewQueue;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -16,8 +17,9 @@ class Navigation
      *
      * A link whose route is not defined yet is kept, with no URL, so the sidebar can grey it out.
      * A link is left out when its ability is not allowed, and a heading when no link follows it.
+     * A link with a `badge` carries the count of what is waiting behind it, shown when above zero.
      *
-     * @return list<array{title: string}|array{label: string, icon: string, url: ?string, active: bool}>
+     * @return list<array{title: string}|array{label: string, icon: string, url: ?string, active: bool, badge: int}>
      */
     public function items(): array
     {
@@ -47,10 +49,22 @@ class Navigation
                 'icon' => $entry['icon'],
                 'url' => $built ? route($entry['route']) : null,
                 'active' => $built && request()->routeIs(...($entry['active'] ?? [$this->group($entry['route'])])),
+                'badge' => $built && isset($entry['badge']) ? $this->badge($entry['badge']) : 0,
             ];
         }
 
         return $items;
+    }
+
+    /**
+     * The count a link's badge shows, by the name config/navigation.php gives it.
+     */
+    private function badge(string $name): int
+    {
+        return match ($name) {
+            'review' => ReviewQueue::count(),
+            default => 0,
+        };
     }
 
     /**

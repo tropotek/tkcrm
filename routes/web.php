@@ -16,6 +16,7 @@ use App\Http\Controllers\ProductPriceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\RecurringController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TaskCategoryController;
 use App\Http\Controllers\TaskController;
@@ -59,6 +60,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('invoices.lines', InvoiceLineController::class)->shallow()->except('index', 'show');
 
     Route::resource('recurrings', RecurringController::class)->except('show');
+
+    // What is waiting for the owner to send. POST issues an open invoice and queues its email together.
+    Route::get('/review', [ReviewController::class, 'index'])->name('review.index');
+    Route::get('/review/{invoice}', [ReviewController::class, 'show'])->name('review.show');
+    Route::post('/review/{invoice}', [ReviewController::class, 'send'])->name('review.send');
 
     // A task is never deleted: it is cancelled.
     Route::resource('tasks', TaskController::class)->except('destroy');
