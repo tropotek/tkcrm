@@ -7,8 +7,7 @@
 #     locally before the tag is made (bin/release).
 #   - timeouts on every job, one run per ref (newer cancels older).
 #   - base images pulled as a Docker Hub user (DOCKERHUB_USERNAME / DOCKERHUB_TOKEN secrets) when set.
-#   - the image takes the repository's visibility: a private repository's package is private, and
-#     the host that runs it must `docker login ghcr.io` with a token that can read packages.
+#   - the image is linked to this public repo, so the GHCR package is public (free storage/transfer).
 name: release
 
 on:

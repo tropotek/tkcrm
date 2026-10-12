@@ -1,5 +1,7 @@
 # tkcrm
 
+[![Docs](https://img.shields.io/badge/docs-tropotek.github.io%2Ftkcrm-1f6feb)](https://tropotek.github.io/tkcrm/)
+
 Clients, tasks and time, invoices and payments, recurring billing, expenses, a profit and loss
 report for each financial year, and monitoring of client sites, for one owner-operator. Built on
 Laravel, shipped as one Docker image (FrankenPHP and SQLite) with everything it stores in a single
@@ -20,6 +22,8 @@ docker compose -f docker-compose-live.yml exec app artisan tkcrm:create-user you
 Open <http://localhost:8080>.
 
 ## Documentation
+
+Full docs at **<https://tropotek.github.io/tkcrm/>**:
 
 | Guide | For |
 |---|---|

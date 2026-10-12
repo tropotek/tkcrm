@@ -43,3 +43,5 @@ docker-compose*.yml
 
 # Not needed to run the site
 docs
+mkdocs.yml
+site

@@ -34,3 +34,6 @@ Thumbs.db
 **/caddy
 frankenphp
 frankenphp-worker.php
+
+# The docs as MkDocs builds them
+/site

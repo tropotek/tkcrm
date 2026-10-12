@@ -1,11 +1,12 @@
 # Installation
 
-Requires Docker with the Compose plugin. Copy `docker-compose-live.yml` from the repository into a
-directory of its own and start it:
+Requires Docker with the Compose plugin. Copy
+[`docker-compose-live.yml`](https://github.com/tropotek/tkcrm/blob/main/docker-compose-live.yml)
+into a directory of its own and start it:
 
 ```bash
 mkdir tkcrm && cd tkcrm
-cp /path/to/docker-compose-live.yml .
+curl -fsSLO https://raw.githubusercontent.com/tropotek/tkcrm/main/docker-compose-live.yml
 docker compose -f docker-compose-live.yml up -d
 docker compose -f docker-compose-live.yml exec app artisan tkcrm:create-user you@example.com
 ```
@@ -114,7 +115,8 @@ docker compose -f docker-compose-live.yml up -d
 ```
 
 The compose file pulls the image on every start, so stopping and starting the site also upgrades
-it. Set `TKCRM_TAG` to a version, such as `1.0.0`, to stay on it.
+it. Versions are listed on the [package page](https://github.com/tropotek/tkcrm/pkgs/container/tkcrm).
+Set `TKCRM_TAG` to one, such as `1.0.0`, to stay on it.
 
 The site runs any new migrations as it starts, and the worker waits for it.
 `curl http://localhost:8080/up` answers with the version once it is up.

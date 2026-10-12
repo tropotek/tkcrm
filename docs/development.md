@@ -38,3 +38,12 @@ builds the image the live compose file runs. To run it from that file, set `TKCR
 the tag. The tag starts the `release` workflow, which builds the image and publishes it to
 `ghcr.io/tropotek/tkcrm` as `1.2.3` and `latest`. The `ci` workflow runs the code style check and
 the tests on every push to `main` and every pull request.
+
+## These docs
+
+The pages in `docs/` are built with MkDocs and published to GitHub Pages by the `docs` workflow
+when a change to them reaches `main`. To read them as they will be published:
+
+```sh
+docker run --rm -p 8000:8000 -v "$PWD":/docs squidfunk/mkdocs-material
+```

@@ -1,0 +1,53 @@
+site_name: tkcrm
+site_description: Clients, tasks and time, invoices, recurring billing, expenses, profit and loss and site monitoring for one owner-operator, in one Docker image.
+site_url: https://tropotek.github.io/tkcrm/
+repo_url: https://github.com/tropotek/tkcrm
+repo_name: tropotek/tkcrm
+edit_uri: edit/main/docs/
+docs_dir: docs
+exclude_docs: |
+  requirements.txt
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.indexes
+    - navigation.top
+    - search.suggest
+    - content.code.copy
+    - content.action.edit
+
+nav:
+  - Home: index.md
+  - Installation: installation.md
+  - Configuration: configuration.md
+  - Backup and restore: backup-restore.md
+  - API and Claude (MCP): api.md
+  - Import from tktask: import-from-tktask.md
+  - Development: development.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+
+validation:
+  nav:
+    omitted_files: warn
+    not_found: warn
+  links:
+    not_found: warn
