@@ -431,6 +431,56 @@ class RecurringManagerTest extends TestCase
         $this->actingAs($this->user)->get('/companies/'.Company::factory()->create()->id)->assertSee('No recurring items.');
     }
 
+    public function test_making_a_client_inactive_offers_to_make_its_recurring_items_inactive_too(): void
+    {
+        $this->catalogue();
+        $other = Company::where('name', 'Ironbark Surveying')->sole();
+        $details = ['type' => 'client', 'name' => 'Wattle Creek Bakery'];
+
+        $this->actingAs($this->user)
+            ->get("/companies/{$this->client->id}/edit")
+            ->assertOk()
+            ->assertSeeInOrder(['Wattle Creek Bakery has 2 recurring items still billing', '$474.00 a year', 'Bakery site hosting, Email hosting', 'name="stop_recurrings" value="1"', 'checked', 'Make them inactive too'], false);
+
+        // A company with nothing billing is not asked, and nor is a new one.
+        $this->actingAs($this->user)->get('/companies/'.Company::factory()->create()->id.'/edit')->assertDontSee('stop_recurrings');
+        $this->actingAs($this->user)->get('/companies/create')->assertOk()->assertDontSee('stop_recurrings');
+
+        // Saved still active, the box does nothing.
+        $this->actingAs($this->user)
+            ->put("/companies/{$this->client->id}", $details + ['active' => '1', 'stop_recurrings' => '1'])
+            ->assertSessionHas('success', 'Wattle Creek Bakery saved.');
+        $this->assertSame(2, $this->client->recurrings()->active()->count());
+
+        $this->actingAs($this->user)
+            ->put("/companies/{$this->client->id}", $details + ['stop_recurrings' => '1'])
+            ->assertRedirect(route('companies.show', $this->client))
+            ->assertSessionHas('success', 'Wattle Creek Bakery saved, and its 2 recurring items made inactive.')
+            ->assertSessionMissing('warning');
+
+        $this->assertFalse($this->client->fresh()->active);
+        $this->assertSame(0, $this->client->recurrings()->active()->count());
+        // Another client's items are left alone, and nothing is deleted.
+        $this->assertSame(1, $other->recurrings()->active()->count());
+        $this->assertSame(4, Recurring::count());
+    }
+
+    public function test_a_client_made_inactive_with_its_recurring_items_left_billing_is_warned_about_them(): void
+    {
+        $this->catalogue();
+        $other = Company::where('name', 'Ironbark Surveying')->sole();
+
+        $this->actingAs($this->user)
+            ->put("/companies/{$other->id}", ['type' => 'client', 'name' => 'Ironbark Surveying'])
+            ->assertSessionHas('success', 'Ironbark Surveying saved.')
+            ->assertSessionHas('warning', 'Ironbark Surveying is inactive but still has 1 recurring item billing. Each will go on adding a line to its open invoice until it is made inactive.');
+
+        $this->assertFalse($other->fresh()->active);
+        $this->assertSame(1, $other->recurrings()->active()->count());
+
+        $this->actingAs($this->user)->get("/companies/{$other->id}")->assertSee('still has 1 recurring item billing');
+    }
+
     public function test_the_update_prices_dialog_says_how_many_items_follow_each_price_and_how_many_have_their_own(): void
     {
         $mail = Product::factory()->create(['name' => 'Email hosting', 'code' => 'HOST-MAIL', 'price' => 1500]);

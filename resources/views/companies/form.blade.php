@@ -30,9 +30,28 @@
                         <x-field name="website" label="Website" :value="$company->website" maxlength="255" />
                         <x-field name="address" label="Address" type="textarea" :value="$company->address" rows="3" help="Printed on invoices and statements." />
 
-                        <div class="form-check">
-                            <input type="checkbox" id="active" name="active" value="1" class="form-check-input" @checked(old('active', $company->active))>
-                            <label for="active" class="form-check-label">Active</label>
+                        {{-- Unticking Active on a client with recurring items still billing offers to stop those too. --}}
+                        @php($billing = $company->exists ? $company->recurrings()->active()->with('product')->get() : collect())
+
+                        <div x-data="{ active: @js((bool) old('active', $company->active)) }">
+                            <div class="form-check">
+                                <input type="checkbox" id="active" name="active" value="1" class="form-check-input" x-model="active" @checked(old('active', $company->active))>
+                                <label for="active" class="form-check-label">Active</label>
+                            </div>
+
+                            @if ($billing->isNotEmpty())
+                                <div class="alert alert-warning mt-3 mb-0" x-show="! active" x-cloak>
+                                    <p class="mb-2">
+                                        {{ $company->name }} has {{ $billing->count() === 1 ? '1 recurring item' : $billing->count().' recurring items' }} still billing,
+                                        {{ App\Support\Money::sum($billing->map->yearlyValue())->format() }} a year:
+                                        {{ $billing->map->label()->join(', ') }}.
+                                    </p>
+                                    <div class="form-check">
+                                        <input type="checkbox" id="stop_recurrings" name="stop_recurrings" value="1" class="form-check-input" @checked(old('stop_recurrings', true))>
+                                        <label for="stop_recurrings" class="form-check-label">Make {{ $billing->count() === 1 ? 'it' : 'them' }} inactive too, so nothing more is billed</label>
+                                    </div>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>

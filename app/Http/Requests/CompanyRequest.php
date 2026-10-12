@@ -40,6 +40,7 @@ class CompanyRequest extends FormRequest
 
         // An unticked checkbox posts nothing. The dialog has no such box: what it adds is active.
         $changes['active'] = $this->fromDialog() ? true : $this->boolean('active');
+        $changes['stop_recurrings'] = $this->boolean('stop_recurrings');
 
         $this->merge($changes);
     }
@@ -62,6 +63,8 @@ class CompanyRequest extends FormRequest
             'address' => ['nullable', 'string', 'max:1000'],
             'notes' => ['nullable', 'string', 'max:10000'],
             'active' => ['boolean'],
+            // Ticked on the edit form when a client made inactive should stop being billed for its recurring items.
+            'stop_recurrings' => ['boolean'],
         ];
     }
 

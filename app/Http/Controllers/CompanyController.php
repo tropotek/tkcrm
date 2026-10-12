@@ -50,7 +50,7 @@ class CompanyController extends Controller
      */
     public function store(CompanyRequest $request): RedirectResponse|Response
     {
-        $company = Company::create($request->validated());
+        $company = Company::create($request->safe()->except('stop_recurrings'));
 
         if ($request->fromDialog()) {
             return response()->noContent()->header('HX-Trigger', json_encode([
@@ -72,10 +72,31 @@ class CompanyController extends Controller
         return view('companies.form', ['company' => $company, 'types' => CompanyType::cases()]);
     }
 
+    /**
+     * A company made inactive may still have recurring items billing. The form offers to make those
+     * inactive too; left as they are, the save says so.
+     */
     public function update(CompanyRequest $request, Company $company): RedirectResponse
     {
-        $company->update($request->validated());
+        $company->update($request->safe()->except('stop_recurrings'));
 
-        return redirect()->route('companies.show', $company)->with('success', "{$company->name} saved.");
+        $redirect = redirect()->route('companies.show', $company);
+        $billing = $company->active ? 0 : $company->recurrings()->active()->count();
+
+        if ($billing === 0) {
+            return $redirect->with('success', "{$company->name} saved.");
+        }
+
+        $items = $billing === 1 ? '1 recurring item' : "{$billing} recurring items";
+
+        if ($request->boolean('stop_recurrings')) {
+            $company->recurrings()->active()->update(['active' => false]);
+
+            return $redirect->with('success', "{$company->name} saved, and its {$items} made inactive.");
+        }
+
+        return $redirect
+            ->with('success', "{$company->name} saved.")
+            ->with('warning', "{$company->name} is inactive but still has {$items} billing. Each will go on adding a line to its open invoice until it is made inactive.");
     }
 }
