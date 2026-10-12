@@ -22,6 +22,13 @@
 |       'can' => 'gst'
 |           A Gate ability the user needs to see the link at all.
 |
+|       'setting' => 'gst_enabled'
+|           A yes/no setting that must be on for the link to be listed at all.
+|
+|       'badge' => 'review'
+|           A count shown beside the link while it is above zero, by a name
+|           App\Support\Navigation::badge() knows.
+|
 | Icons are Remix (ri-), Material Design (mdi mdi-) or Feather (fe-) classes.
 |
 */
@@ -46,7 +53,7 @@ return [
     ['title' => 'Reports'],
     ['label' => 'Profit and loss', 'icon' => 'ri-line-chart-line', 'route' => 'reports.profit-loss', 'active' => ['reports.profit-loss', 'reports.profit-loss.*']],
     ['label' => 'Sales', 'icon' => 'ri-bar-chart-2-line', 'route' => 'reports.sales', 'active' => ['reports.sales']],
-    ['label' => 'BAS summary', 'icon' => 'ri-government-line', 'route' => 'reports.bas', 'active' => ['reports.bas']],
+    ['label' => 'BAS summary', 'icon' => 'ri-government-line', 'route' => 'reports.bas', 'active' => ['reports.bas'], 'setting' => 'gst_enabled'],
 
     ['title' => 'Admin'],
     ['label' => 'Mail log', 'icon' => 'ri-mail-send-line', 'route' => 'mail-log.index'],

@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Facades\Settings;
 use App\Review\ReviewQueue;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Route;
@@ -16,7 +17,7 @@ class Navigation
      * The headings and links to show, in order.
      *
      * A link whose route is not defined yet is kept, with no URL, so the sidebar can grey it out.
-     * A link is left out when its ability is not allowed, and a heading when no link follows it.
+     * A link is left out when its ability is not allowed or its setting is off, and a heading when no link follows it.
      * A link with a `badge` carries the count of what is waiting behind it, shown when above zero.
      *
      * @return list<array{title: string}|array{label: string, icon: string, url: ?string, active: bool, badge: int}>
@@ -34,6 +35,10 @@ class Navigation
             }
 
             if (isset($entry['can']) && ! Gate::check($entry['can'])) {
+                continue;
+            }
+
+            if (isset($entry['setting']) && ! Settings::get($entry['setting'])) {
                 continue;
             }
 

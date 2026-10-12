@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AttachmentController;
+use App\Http\Controllers\BasSummaryController;
 use App\Http\Controllers\CompanyController;
 use App\Http\Controllers\CompanyStatementController;
 use App\Http\Controllers\ExpenseCategoryController;
@@ -111,6 +112,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/mail-log/{mailLog}/resend', [MailLogController::class, 'resend'])->name('mail-log.resend');
 
     Route::get('/reports/profit-loss', [ProfitLossController::class, 'show'])->name('reports.profit-loss');
+    // Only while GST is on: it answers 404 with it off.
+    Route::get('/reports/bas', BasSummaryController::class)->name('reports.bas');
     Route::get('/reports/sales', SalesReportController::class)->name('reports.sales');
     Route::get('/reports/profit-loss/pdf', [ProfitLossController::class, 'pdf'])->name('reports.profit-loss.pdf');
 

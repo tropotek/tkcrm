@@ -37,7 +37,7 @@ class LayoutTest extends TestCase
     public function test_a_screen_that_is_not_built_yet_is_listed_greyed_and_is_not_a_link(): void
     {
         $this->get('/')
-            ->assertSeeInOrder(['<a class="disabled" aria-disabled="true" title="Not built yet">', 'BAS summary'], false)
+            ->assertSeeInOrder(['<a class="disabled" aria-disabled="true" title="Not built yet">', 'Domains'], false)
             ->assertDontSee('href=""', false);
     }
 
@@ -47,7 +47,8 @@ class LayoutTest extends TestCase
             'Dashboard', 'Review queue', 'Tasks', 'Projects',
             'Invoices', 'Recurring', 'Expenses',
             'Companies', 'Products', 'Domains',
-            'Profit and loss', 'Sales', 'BAS summary',
+            // BAS summary is listed only while GST is on.
+            'Profit and loss', 'Sales',
             'Mail log', 'Settings',
         ]);
     }
