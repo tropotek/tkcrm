@@ -76,11 +76,20 @@ class InvoiceLine extends Model
     }
 
     /**
-     * Made from another record (a task's time), which is where it is changed, not on the invoice.
+     * Made from another record: a task's time, or a cycle of a recurring item.
      */
     public function isFromSource(): bool
     {
         return $this->source_id !== null;
+    }
+
+    /**
+     * A line made from a task is that task's time, changed by re-opening the task and never on the
+     * invoice. A recurring item's line is the owner's to change or take off: the item has moved on.
+     */
+    public function isLockedBySource(): bool
+    {
+        return $this->source_id !== null && $this->source_type === (new Task)->getMorphClass();
     }
 
     /**

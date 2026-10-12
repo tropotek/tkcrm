@@ -75,7 +75,7 @@ class RecurringController extends Controller
     {
         if ($recurring->hasRun()) {
             return redirect()->route('recurrings.edit', $recurring)
-                ->with('error', "{$recurring->label()} has been billed, so it cannot be deleted. Make it inactive instead.");
+                ->with('error', "{$recurring->label()} has begun its cycles, so it cannot be deleted. Make it inactive instead.");
         }
 
         $recurring->delete();

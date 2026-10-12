@@ -361,8 +361,7 @@ class RecurringManagerTest extends TestCase
         $this->actingAs($this->user)
             ->get("/recurrings/{$recurring->id}/edit")
             ->assertOk()
-            ->assertSee('Billed once, last on 1 Jul 2025')
-            ->assertSee('and next on 1 Jul 2026')
+            ->assertSeeInOrder(['Billed once.', 'Its last cycle began on 1 Jul 2025.', 'Its next begins on 1 Jul 2026.'])
             ->assertDontSee('name="start_on"', false)
             ->assertDontSee('name="cycle"', false);
 
@@ -390,7 +389,7 @@ class RecurringManagerTest extends TestCase
 
         $this->actingAs($this->user)->get("/recurrings/{$new->id}/edit")->assertSee('name="_method" value="DELETE"', false);
         $this->actingAs($this->user)->get("/recurrings/{$billed->id}/edit")
-            ->assertSee('It has been billed, so it cannot be deleted.')
+            ->assertSee('Its cycles have begun, so it cannot be deleted.')
             ->assertDontSee('name="_method" value="DELETE"', false);
 
         $this->actingAs($this->user)
@@ -401,7 +400,7 @@ class RecurringManagerTest extends TestCase
         $this->actingAs($this->user)
             ->delete("/recurrings/{$billed->id}")
             ->assertRedirect(route('recurrings.edit', $billed))
-            ->assertSessionHas('error', 'Real hosting has been billed, so it cannot be deleted. Make it inactive instead.');
+            ->assertSessionHas('error', 'Real hosting has begun its cycles, so it cannot be deleted. Make it inactive instead.');
 
         $this->assertSame(['Real hosting'], Recurring::pluck('description')->all());
         $this->actingAs($this->user)->get('/recurrings/9999/edit')->assertNotFound();

@@ -14,6 +14,7 @@ use Illuminate\View\View;
  *
  * A line made from a task is that task's time: it is changed by re-opening the task, which takes
  * the line off, never here. So a task can never be left closed and marked billed with no line.
+ * A line the recurring run added can be changed or deleted like one typed by hand.
  */
 class InvoiceLineController extends Controller
 {
@@ -60,7 +61,7 @@ class InvoiceLineController extends Controller
 
     private function mustBeEditable(InvoiceLine $line): void
     {
-        abort_unless($line->invoice->isOpen() && ! $line->isFromSource(), 403);
+        abort_unless($line->invoice->isOpen() && ! $line->isLockedBySource(), 403);
     }
 
     /**

@@ -6,9 +6,11 @@
     $totals: its App\Invoices\InvoiceTotals, stored once issued and worked out from the lines until then.
     $unpaid: the client's other unpaid invoices.
     $hasTaskList: it has lines that came from tasks, so there is a task list PDF to go with it.
-    A line made from a task is changed by re-opening the task, so it has no buttons.
+    A line made from a task is changed by re-opening the task, so it has no buttons. One from a
+    recurring item links to the item and is changed here like any other.
 --}}
 @php
+    use App\Models\Recurring;
     use App\Models\Task;
     use App\Support\BasisPoints;
 
@@ -161,6 +163,8 @@
                                         <td class="text-nowrap">
                                             @if ($line->source instanceof Task)
                                                 <a href="{{ route('tasks.show', $line->source) }}">{{ $line->product_code }}</a>
+                                            @elseif ($line->source instanceof Recurring)
+                                                <a href="{{ route('recurrings.edit', $line->source) }}" title="From a recurring item">{{ $line->product_code ?: 'Recurring' }}</a>
                                             @else
                                                 {{ $line->product_code }}
                                             @endif
@@ -175,7 +179,7 @@
                                         <td class="text-end text-nowrap">{{ $line->unit_price->format() }}</td>
                                         <td class="text-end text-nowrap">{{ $line->total()->format() }}</td>
                                         <td class="text-end text-nowrap">
-                                            @if ($open && $line->isFromSource())
+                                            @if ($open && $line->isLockedBySource())
                                                 <span class="text-muted small" title="Re-open the task to change this line or take it off">From its task</span>
                                             @elseif ($open)
                                                 <button type="button" class="btn btn-sm btn-light" hx-get="{{ route('lines.edit', $line) }}" hx-target="#app-modal-content">Edit</button>

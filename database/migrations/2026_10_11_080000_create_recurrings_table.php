@@ -23,7 +23,8 @@ return new class extends Migration
             $table->date('start_on');
             // The last day it may bill on, if it ends.
             $table->date('end_on')->nullable();
-            // When it last billed and when it bills next, and how many times it has: kept by the run.
+            // The day its last cycle began and the day its next one does, kept by the run. An inactive
+            // item moves on too. The count is of the cycles billed.
             $table->date('previous_on')->nullable();
             $table->date('next_on')->index();
             $table->unsignedInteger('count')->default(0);

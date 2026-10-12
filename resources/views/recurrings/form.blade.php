@@ -99,8 +99,11 @@
 
                         @if ($hasRun)
                             <p class="form-text mt-n2">
-                                Billed {{ $recurring->count === 1 ? 'once' : $recurring->count.' times' }}{{ $recurring->previous_on ? ', last on '.$recurring->previous_on->format('j M Y') : '' }},
-                                and next on {{ $recurring->next_on->format('j M Y') }}. Its dates follow from its start and cycle, so those are fixed now:
+                                {{ match ($recurring->count) { 0 => 'Not billed yet', 1 => 'Billed once', default => 'Billed '.$recurring->count.' times' } }}.
+                                @if ($recurring->previous_on)
+                                    Its last cycle began on {{ $recurring->previous_on->format('j M Y') }}.
+                                @endif
+                                Its next begins on {{ $recurring->next_on->format('j M Y') }}. Its dates follow from its start and cycle, so those are fixed now:
                                 to change them, give this one an end date and add another.
                             </p>
                         @elseif ($recurring->exists)
@@ -134,7 +137,7 @@
 
         @if ($recurring->exists)
             @if ($hasRun)
-                <span class="text-muted ms-auto">It has been billed, so it cannot be deleted. Untick Active to stop it.</span>
+                <span class="text-muted ms-auto">Its cycles have begun, so it cannot be deleted. Untick Active to stop it.</span>
             @else
                 <form method="POST" action="{{ route('recurrings.destroy', $recurring) }}" class="ms-auto"
                     onsubmit="return confirm('Delete this recurring item? This cannot be undone.')">
