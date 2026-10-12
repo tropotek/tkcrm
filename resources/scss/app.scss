@@ -80,3 +80,16 @@ html:not([data-bs-theme="dark"]) .theme-icon-dark {
 [x-cloak] {
     display: none !important;
 }
+
+// A chart's series colours (resources/js/charts.js), stepped for each surface: blue then orange,
+// which stay apart for colour-blind readers on both.
+[data-chart] {
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    min-height: 320px;
+}
+
+html[data-bs-theme="dark"] [data-chart] {
+    --series-1: #3987e5;
+    --series-2: #d95926;
+}

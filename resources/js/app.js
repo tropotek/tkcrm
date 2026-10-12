@@ -10,6 +10,7 @@ import Alpine from 'alpinejs';
 
 import './modal';
 import './notifications';
+import './charts';
 
 window.htmx = htmx;
 window.Alpine = Alpine;

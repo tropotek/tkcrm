@@ -22,6 +22,7 @@ use App\Http\Controllers\ProfitLossController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\RecurringController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\SalesReportController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\TaskCategoryController;
 use App\Http\Controllers\TaskController;
@@ -110,6 +111,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/mail-log/{mailLog}/resend', [MailLogController::class, 'resend'])->name('mail-log.resend');
 
     Route::get('/reports/profit-loss', [ProfitLossController::class, 'show'])->name('reports.profit-loss');
+    Route::get('/reports/sales', SalesReportController::class)->name('reports.sales');
     Route::get('/reports/profit-loss/pdf', [ProfitLossController::class, 'pdf'])->name('reports.profit-loss.pdf');
 
     Route::get('/jobs', [JobRunController::class, 'index'])->name('jobs.index');
