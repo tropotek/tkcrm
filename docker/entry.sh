@@ -1,0 +1,82 @@
+#!/bin/sh
+# Container entrypoint for the shipped image: prepare /app/data, keep APP_KEY, migrate, cache,
+# then exec the command as the unprivileged `app` user.
+#
+# The same image runs the site and its worker (docker-compose-live.yml). Only the site
+# migrates: the worker is started with TKCRM_MIGRATE=0 and waits for the site to be healthy.
+set -eu
+cd /app
+
+as_app() { su-exec app "$@"; }
+
+DATA=/app/data
+mkdir -p "$DATA/private" "$DATA/logs"
+# A bind mount arrives owned by the host user; fix once (skip the walk when already right).
+if [ "$(stat -c %U "$DATA")" != app ] || [ "$(stat -c %U "$DATA/private")" != app ]; then
+    chown -R app:app "$DATA"
+fi
+chown app:app "$DATA/private" "$DATA/logs"
+chmod 700 "$DATA/private"
+
+if [ "${DB_CONNECTION:-sqlite}" = sqlite ] && [ ! -f "$DB_DATABASE" ]; then
+    as_app touch "$DB_DATABASE"
+fi
+
+# APP_KEY encrypts the sessions: env wins, else the kept key, else make one. The worker reads
+# the key the site made.
+KEY_FILE="$DATA/private/.app-key"
+if [ -z "${APP_KEY:-}" ]; then
+    if [ ! -s "$KEY_FILE" ]; then
+        as_app sh -c "umask 077 && php -r 'echo \"base64:\".base64_encode(random_bytes(32));' > '$KEY_FILE'"
+        echo "tkcrm: generated APP_KEY in $KEY_FILE. It is kept with the database, so an upgrade signs nobody out."
+    fi
+    APP_KEY="$(cat "$KEY_FILE")"
+    export APP_KEY
+fi
+
+# HTTPS from the container itself, when SERVER_NAME is a host name. ":80", or none, is plain HTTP
+# only. A second Caddy site on 443 hands each request to the plain one on APP_PORT, as a reverse
+# proxy in front would, so the app has to trust this container's own address.
+# Caddy gets and renews the certificate itself, unless it is told otherwise:
+#   TKCRM_TLS=internal                  signed by Caddy's own authority, for a name that is not public
+#   TKCRM_TLS_CERT and TKCRM_TLS_KEY   a certificate the operator installed
+case "${SERVER_NAME:-}" in
+    '' | :*)
+        if [ -n "${TKCRM_TLS_CERT:-}${TKCRM_TLS_KEY:-}${TKCRM_TLS:-}" ]; then
+            echo "tkcrm: a certificate is set but SERVER_NAME is not a host name, so the site is plain HTTP only." >&2
+        fi
+        ;;
+    *)
+        tls="${TKCRM_TLS:+tls $TKCRM_TLS}"
+        if [ -n "${TKCRM_TLS_CERT:-}" ] || [ -n "${TKCRM_TLS_KEY:-}" ]; then
+            for file in "${TKCRM_TLS_CERT:-}" "${TKCRM_TLS_KEY:-}"; do
+                if [ -z "$file" ] || ! as_app test -r "$file"; then
+                    echo "tkcrm: TKCRM_TLS_CERT and TKCRM_TLS_KEY must each name a file the app user (uid 1000) can read. '$file' is not one." >&2
+                    exit 1
+                fi
+            done
+            tls="tls $TKCRM_TLS_CERT $TKCRM_TLS_KEY"
+        fi
+        # Plain HTTP on 80 only sends the reader on to HTTPS.
+        TKCRM_TLS_SITE="$SERVER_NAME {
+	$tls
+	reverse_proxy 127.0.0.1:${APP_PORT}
+}
+$(echo "$SERVER_NAME" | sed 's#[^, ][^, ]*#http://&#g') {
+	redir https://{host}{uri} permanent
+}"
+        TRUSTED_PROXIES="${TRUSTED_PROXIES:+$TRUSTED_PROXIES,}127.0.0.1"
+        # Caddy keeps the certificates it gets in data/caddy, so an upgrade does not ask for them again.
+        XDG_DATA_HOME="$DATA"
+        export TKCRM_TLS_SITE TRUSTED_PROXIES XDG_DATA_HOME
+        ;;
+esac
+
+if [ "${TKCRM_MIGRATE:-1}" = 1 ]; then
+    as_app php artisan migrate --force --no-interaction
+fi
+
+# Config, routes, views and events, cached in this container's own filesystem.
+as_app php artisan optimize --no-interaction >/dev/null
+
+exec su-exec app "$@"

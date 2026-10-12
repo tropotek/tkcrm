@@ -12,6 +12,7 @@ use App\Models\Task;
 use App\Models\TaskLog;
 use App\Support\Owner;
 use App\Support\Settings;
+use App\Support\TrustedProxies;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
@@ -39,6 +40,8 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        TrustedProxies::apply();
 
         // The API: so many requests a minute for each token's user.
         RateLimiter::for('api', fn (Request $request) => Limit::perMinute((int) config('tkcrm.api.per_minute'))->by((string) ($request->user()?->id ?? $request->ip())));
