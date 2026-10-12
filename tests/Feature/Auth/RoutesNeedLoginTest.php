@@ -19,14 +19,31 @@ class RoutesNeedLoginTest extends TestCase
             ->all();
 
         $this->assertSame([
+            // The MCP package's own two: they answer 405 and nothing else (the test below).
+            'DELETE mcp',
             'GET|HEAD forgot-password',
             'GET|HEAD login',
+            'GET|HEAD mcp',
             'GET|HEAD reset-password/{token}',
             'GET|HEAD up',
             'POST forgot-password',
             'POST login',
             'POST reset-password',
         ], $open);
+    }
+
+    public function test_the_mcp_server_is_reached_only_by_a_post_with_a_token(): void
+    {
+        $post = collect(Route::getRoutes()->getRoutes())->sole(fn (RoutingRoute $route) => $route->uri() === 'mcp' && $route->methods() === ['POST']);
+
+        $this->assertContains('auth:sanctum', $post->gatherMiddleware());
+        $this->assertContains('abilities:read', $post->gatherMiddleware());
+
+        // What the protocol asks of the other two methods: a refusal that says to POST, with no body.
+        foreach (['get', 'delete'] as $method) {
+            $response = $this->{$method}('/mcp')->assertStatus(405)->assertHeader('Allow', 'POST');
+            $this->assertSame('', $response->getContent());
+        }
     }
 
     public function test_every_api_route_is_a_get_that_needs_a_token_with_the_read_ability(): void

@@ -25,3 +25,21 @@ docker compose exec app composer test                 # run the test suite
 The ports are set in `.env`.
 
 The queue and the scheduler run in a `worker` container that is off by default, so a dev site never bills, mails or pings on a timer. Start it with `docker compose --profile worker up -d`.
+
+## API and MCP
+
+Both are read-only: they can read what you see on the screens and cannot change a record, issue an invoice or send an email. Both take a personal access token, made on the profile page under API tokens. The token is shown once, when it is made.
+
+**API.** JSON at `/api/v1`, GET only. `GET /api/v1` lists the endpoints: clients, invoices, outstanding, tasks, time-logs, recurring, expenses, profit-loss and sites. Each takes the same filters as its screen, by the same names, and a list is paged with `page` and `per_page`. Amounts are decimal strings in AUD.
+
+```bash
+curl -H "Authorization: Bearer YOUR-TOKEN" -H "Accept: application/json" "http://tkcrm.tk/api/v1/outstanding"
+```
+
+**MCP.** A server at `/mcp` with one tool for each endpoint, for an assistant such as Claude. Register it with Claude Code, with a token in place of `YOUR-TOKEN` and your own address in place of `http://tkcrm.tk`:
+
+```bash
+claude mcp add --transport http tkcrm http://tkcrm.tk/mcp --header "Authorization: Bearer YOUR-TOKEN"
+```
+
+The profile page shows the same line with the site's own address filled in.
