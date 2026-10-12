@@ -41,6 +41,7 @@ docker compose exec app composer test
 docker compose exec app vendor/bin/pint
 docker compose build app                          # after changing the Dockerfile
 docker build -t tkcrm .                           # the shipped image (the prod target), to try it by hand
+bin/release v1.2.3                                # on the host: check style, run the suite, tag, and offer to push the tag (which publishes the image)
 ```
 
 | Service | Where | What |
@@ -79,6 +80,7 @@ The seeder makes one dev login, `owner@example.com` with the password `password`
 - `config/navigation.php`: the sidebar menu, read by `App\Support\Navigation`.
 - `routes/api.php`, `app/Api/`: the read-only JSON API. `routes/ai.php`, `app/Mcp/`: the MCP server over it.
 - `resources/fonts/`, `resources/images/`: icon fonts and images the SCSS refers to.
+- `.github/workflows/`: `ci.yml` runs Pint and the suite on every push to `main` and pull request; `release.yml` builds and publishes `ghcr.io/tropotek/tkcrm` from a `v*` tag, stamped with the tag as its version. `bin/release` makes that tag.
 - `tests/Feature`, `tests/Unit`: PHPUnit tests.
 - `_notes/`: local planning docs, gitignored.
 - `version.md`: the app version.
