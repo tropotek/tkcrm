@@ -98,6 +98,16 @@ class Company extends Model
     }
 
     /**
+     * Its sites that are watched.
+     *
+     * @return HasMany<Domain, $this>
+     */
+    public function domains(): HasMany
+    {
+        return $this->hasMany(Domain::class);
+    }
+
+    /**
      * What was bought from it, as a supplier.
      *
      * @return HasMany<Expense, $this>

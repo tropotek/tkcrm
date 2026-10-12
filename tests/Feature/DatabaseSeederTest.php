@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Enums\CompanyType;
 use App\Enums\Cycle;
+use App\Enums\DomainState;
 use App\Enums\ProjectStatus;
 use App\Enums\TaskStatus;
 use App\Models\Company;
+use App\Models\Domain;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\InvoiceLine;
@@ -178,6 +180,24 @@ class DatabaseSeederTest extends TestCase
         $this->assertSame(['Bluegum Hosting', 'Phone and internet', '$89.00', '$44.50'], [$internet->company->name, $internet->category->name, $internet->total->format(), $internet->claimable()->format()]);
         $this->assertTrue($internet->company->isSupplier());
         $this->assertSame('-$62.00', Expense::where('invoice_number', 'PB-7731-CR')->sole()->total->format());
+    }
+
+    public function test_it_makes_domains_in_each_state_with_checks_behind_them_however_often_it_is_seeded(): void
+    {
+        $this->runSeeder();
+        $this->runSeeder();
+
+        $this->assertSame(4, Domain::count());
+        $this->assertSame(3, Domain::active()->count());
+        $this->assertEqualsCanonicalizing(DomainState::cases(), Domain::active()->get()->map(fn (Domain $domain) => $domain->state)->all());
+
+        $up = Domain::where('url', 'https://wattlecreek.example.com/up')->sole();
+        $this->assertSame(['Wattle Creek Bakery', '1.4.2', 25], [$up->company->name, $up->version, $up->pings()->count()]);
+        $this->assertSame(['version' => '1.4.2', 'db' => 'ok'], $up->pings()->first()->reply);
+
+        $down = Domain::where('url', 'https://ironbark.example.com/tkping')->sole();
+        $this->assertSame([DomainState::Down, 3], [$down->state, $down->pings()->where('ok', false)->count()]);
+        $this->assertFalse($down->pings()->first()->ok);
     }
 
     public function test_it_seeds_nothing_in_production(): void

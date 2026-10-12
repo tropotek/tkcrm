@@ -6,6 +6,8 @@ use App\Enums\CompanyType;
 use App\Enums\Cycle;
 use App\Enums\TaskPriority;
 use App\Models\Company;
+use App\Models\Domain;
+use App\Models\DomainPing;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Product;
@@ -46,6 +48,7 @@ class DatabaseSeeder extends Seeder
         $this->tasks();
         $this->recurrings();
         $this->expenses();
+        $this->domains();
     }
 
     /**
@@ -248,6 +251,60 @@ class DatabaseSeeder extends Seeder
                 'purchased_on' => today()->subDays($daysAgo),
                 'total' => $total,
             ]);
+        }
+    }
+
+    /**
+     * Sites to watch for the seeded clients, found again by address: one up and reporting a
+     * version, one down for the last two hours, one not checked yet and one inactive. The first
+     * two have a day of made-up checks behind them.
+     */
+    private function domains(): void
+    {
+        // Client, address, state factory, what each passing check replied, then anything else.
+        $domains = [
+            ['Wattle Creek Bakery', 'https://wattlecreek.example.com/up', 'up', ['version' => '1.4.2', 'db' => 'ok'], []],
+            ['Ironbark Surveying', 'https://ironbark.example.com/tkping', 'down', ['siteName' => 'Ironbark Surveying', 'timezone' => 'Australia/Melbourne', 'bytes' => 48211456], []],
+            ['Ironbark Surveying', 'https://jobs.ironbark.example.com', null, null, []],
+            ['Saltbush Yoga Studio', 'https://saltbush.example.com', null, null, ['active' => false, 'notes' => 'Moved to another host.']],
+        ];
+
+        foreach ($domains as [$client, $url, $state, $reply, $more]) {
+            $company = Company::where('name', $client)->first();
+
+            if (! $company || Domain::where('url', $url)->exists()) {
+                continue;
+            }
+
+            $factory = match ($state) {
+                'up' => Domain::factory()->up(now()->subDay()),
+                'down' => Domain::factory()->down(now()->subHours(2)),
+                default => Domain::factory(),
+            };
+
+            $domain = $factory->for($company)->create(['url' => $url] + $more);
+
+            if ($state === null) {
+                continue;
+            }
+
+            // A check every hour for a day. The site that is down stopped answering two hours ago.
+            foreach (range(24, 0) as $hoursAgo) {
+                $failed = $state === 'down' && $hoursAgo <= 2;
+
+                DomainPing::factory()->for($domain)->state($failed
+                    ? ['ok' => false, 'http_status' => null, 'response_ms' => null, 'error' => 'No reply within 15 seconds']
+                    : ['response_ms' => 90 + (($hoursAgo * 37) % 160), 'reply' => $reply]
+                )->create(['checked_at' => now()->subHours($hoursAgo)]);
+            }
+
+            $domain->forceFill([
+                'version' => $state === 'up' ? $reply['version'] : null,
+                'version_changed_at' => $state === 'up' ? now()->subDay() : null,
+                'details' => $reply,
+                'last_ok_at' => $state === 'up' ? now() : now()->subHours(3),
+                'checked_at' => now(),
+            ])->save();
         }
     }
 }
