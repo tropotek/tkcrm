@@ -50,6 +50,8 @@ class SettingsPass implements Pass
             'company.name' => 'client_name', 'company.contact' => 'contact_name', 'site.name' => 'owner_name',
             'account.id' => 'account_number', 'payment.amount' => 'payment_amount', 'payment.received' => 'received_on',
             'payment.method' => 'payment_method',
+            // A payment keeps its tktask id, so the receipt numbers clients have seen carry on.
+            'payment.id' => 'receipt_number',
         ]],
     ];
 

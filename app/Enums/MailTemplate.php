@@ -157,6 +157,7 @@ enum MailTemplate: string
             self::Receipt => [
                 'invoice_number' => 'The invoice\'s number',
                 'invoice_total' => 'The invoice\'s total',
+                'receipt_number' => 'The payment\'s own number, as a receipt number',
                 'payment_amount' => 'The amount of the payment',
                 'payment_method' => 'How it was paid',
                 'received_on' => 'The day the payment was received',
@@ -284,6 +285,7 @@ enum MailTemplate: string
             'due_on' => $day($overdue ? 9 : -14),
             'amount_owing' => Money::cents(123450)->format(),
             'days_overdue' => '9 days',
+            'receipt_number' => '318',
             'payment_amount' => Money::cents(123450)->format(),
             'payment_method' => 'Bank transfer',
             'received_on' => $day(0),

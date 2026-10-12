@@ -194,7 +194,7 @@ class UsersAndSettingsPassTest extends TestCase
     {
         $this->registry([
             'site.email.invoice.unpaid' => '<p>Dear {company.name},</p><p>{user.message}</p><p>Please find your invoice attached.<br />Payment details:</p><div>{payment.text}</div><p>Thanks &amp; regards</p>',
-            'site.email.payment.cleared' => '<p>Hi {company.contact},</p><p>We received {payment.amount} by {payment.method} on {payment.received} for account {account.id}.</p><p>{site.name}</p>',
+            'site.email.payment.cleared' => '<p>Hi {company.contact},</p><p>We received {payment.amount} by {payment.method} on {payment.received} for account {account.id}.</p><p>Receipt ID: {payment.id}</p><p>{site.name}</p>',
             'site.email.sig' => '<p>Regards,<br>{site.name}</p>',
         ]);
 
@@ -208,7 +208,7 @@ class UsersAndSettingsPassTest extends TestCase
             MailTemplate::Invoice->body(),
         );
         $this->assertSame(
-            "Hi {contact_name},\n\nWe received {payment_amount} by {payment_method} on {received_on} for account {account_number}.\n\n{owner_name}",
+            "Hi {contact_name},\n\nWe received {payment_amount} by {payment_method} on {received_on} for account {account_number}.\n\nReceipt ID: {receipt_number}\n\n{owner_name}",
             MailTemplate::Receipt->body(),
         );
         $this->assertSame("Regards,\n{owner_name}", Settings::get(MailTemplate::SIGNATURE_KEY));
@@ -217,7 +217,7 @@ class UsersAndSettingsPassTest extends TestCase
     public function test_wording_with_a_placeholder_tkcrm_does_not_have_is_left_at_its_default_and_reported(): void
     {
         $this->registry([
-            'site.email.payment.cleared' => '<p>Receipt {payment.id} for {company.name}: {payment.amount}.</p>',
+            'site.email.payment.cleared' => '<p>Receipt for {company.name}: {payment.amount}, logged by {user.name}.</p>',
             'site.email.sig' => '<p>{company.name}</p>',
         ]);
 
@@ -230,7 +230,7 @@ class UsersAndSettingsPassTest extends TestCase
         $this->assertSame(MailTemplate::DEFAULT_SIGNATURE, Settings::get(MailTemplate::SIGNATURE_KEY));
         $this->assertSame([
             "tktask's site.email.sig uses {company.name}, which tkcrm's wording does not have, so it was not brought over. Set mail_signature on the settings page.",
-            "tktask's site.email.payment.cleared uses {payment.id}, which tkcrm's wording does not have, so it was not brought over. Set mail_receipt_body on the settings page.",
+            "tktask's site.email.payment.cleared uses {user.name}, which tkcrm's wording does not have, so it was not brought over. Set mail_receipt_body on the settings page.",
         ], $context->warnings);
     }
 

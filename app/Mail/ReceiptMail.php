@@ -60,6 +60,7 @@ class ReceiptMail extends Mailable
         return MailTemplate::Receipt->fill(MailTemplate::clientValues($invoice->company) + [
             'invoice_number' => (string) $invoice->number,
             'invoice_total' => $invoice->totals()->total->format(),
+            'receipt_number' => (string) $payment->id,
             'payment_amount' => $payment->amount->format(),
             'payment_method' => $payment->method->label(),
             'received_on' => LocalTime::of($payment->received_at)->format('j M Y'),
