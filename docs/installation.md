@@ -1,12 +1,12 @@
 # Installation
 
 Requires Docker with the Compose plugin. Copy
-[`docker-compose-live.yml`](https://github.com/tropotek/tkcrm/blob/main/docker-compose-live.yml)
-into a directory of its own and start it:
+[`docker-compose-example.yml`](https://github.com/tropotek/tkcrm/blob/main/docker-compose-example.yml)
+into a directory of its own as `docker-compose-live.yml` and start it:
 
 ```bash
 mkdir tkcrm && cd tkcrm
-curl -fsSLO https://raw.githubusercontent.com/tropotek/tkcrm/main/docker-compose-live.yml
+curl -fsSLo docker-compose-live.yml https://raw.githubusercontent.com/tropotek/tkcrm/main/docker-compose-example.yml
 docker compose -f docker-compose-live.yml up -d
 docker compose -f docker-compose-live.yml exec app artisan tkcrm:create-user you@example.com
 ```

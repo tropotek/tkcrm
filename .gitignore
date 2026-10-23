@@ -37,3 +37,7 @@ frankenphp-worker.php
 
 # The docs as MkDocs builds them
 /site
+
+# The live compose file is the host's own copy of docker-compose-example.yml
+/docker-compose-*.yml
+!/docker-compose-example.yml

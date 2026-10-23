@@ -2,7 +2,7 @@
 # Container entrypoint for the shipped image: prepare /app/data, keep APP_KEY, migrate, cache,
 # then exec the command as the unprivileged `app` user.
 #
-# The same image runs the site and its worker (docker-compose-live.yml). Only the site
+# The same image runs the site and its worker (docker-compose-example.yml). Only the site
 # migrates: the worker is started with TKCRM_MIGRATE=0 and waits for the site to be healthy.
 set -eu
 cd /app

@@ -1,4 +1,6 @@
 # tkcrm — the live compose file: the site and its worker, two containers of the one shipped image.
+# Copy this file to docker-compose-live.yml in a directory of its own (that name is what
+# livesites.sh looks for), with a .env beside it.
 #
 #   docker compose -f docker-compose-live.yml up -d        start (migrations run automatically)
 #   docker compose -f docker-compose-live.yml down && \

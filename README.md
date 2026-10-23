@@ -12,7 +12,7 @@ are drafted and wait in a review queue.
 
 ## Quick start
 
-Copy [`docker-compose-live.yml`](docker-compose-live.yml) into an empty directory, then:
+Copy [`docker-compose-example.yml`](docker-compose-example.yml) into an empty directory as `docker-compose-live.yml`, then:
 
 ```sh
 docker compose -f docker-compose-live.yml up -d
